@@ -2,25 +2,25 @@ var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 var _a;
-import require$$0$6, { app, BrowserWindow, ipcMain } from "electron";
+import require$$0$5, { app, BrowserWindow, ipcMain } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import require$$1 from "tty";
 import require$$1$2 from "util";
 import require$$1$1 from "os";
-import require$$0$4 from "events";
+import require$$0$3 from "events";
 import require$$1$4 from "https";
 import require$$2$1 from "http";
 import require$$3 from "net";
 import require$$4 from "tls";
 import require$$1$3 from "crypto";
-import require$$0$3 from "stream";
+import require$$0$2 from "stream";
 import require$$7 from "url";
-import require$$0$1 from "zlib";
-import require$$0 from "fs";
+import require$$0 from "zlib";
+import fs from "fs";
 import require$$2 from "path";
-import require$$0$2 from "buffer";
-import require$$0$5 from "child_process";
+import require$$0$1 from "buffer";
+import require$$0$4 from "child_process";
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
@@ -978,7 +978,7 @@ var hasRequiredNodeGypBuild$1;
 function requireNodeGypBuild$1() {
   if (hasRequiredNodeGypBuild$1) return nodeGypBuild;
   hasRequiredNodeGypBuild$1 = 1;
-  var fs = require$$0;
+  var fs$1 = fs;
   var path2 = require$$2;
   var os = require$$1$1;
   var runtimeRequire = typeof __webpack_require__ === "function" ? __non_webpack_require__ : commonjsRequire;
@@ -1039,7 +1039,7 @@ function requireNodeGypBuild$1() {
   };
   function readdirSync(dir) {
     try {
-      return fs.readdirSync(dir);
+      return fs$1.readdirSync(dir);
     } catch (err) {
       return [];
     }
@@ -1133,7 +1133,7 @@ function requireNodeGypBuild$1() {
     return typeof window !== "undefined" && window.process && window.process.type === "renderer";
   }
   function isAlpine(platform2) {
-    return platform2 === "linux" && fs.existsSync("/etc/alpine-release");
+    return platform2 === "linux" && fs$1.existsSync("/etc/alpine-release");
   }
   load.parseTags = parseTags;
   load.matchTags = matchTags;
@@ -1299,7 +1299,7 @@ let Limiter$1 = class Limiter {
   }
 };
 var limiter = Limiter$1;
-const zlib = require$$0$1;
+const zlib = require$$0;
 const bufferUtil = bufferUtilExports;
 const Limiter2 = limiter;
 const { kStatusCode: kStatusCode$2 } = constants;
@@ -1726,7 +1726,7 @@ function requireUtf8Validate() {
   return utf8Validate.exports;
 }
 var isValidUTF8_1;
-const { isUtf8 } = require$$0$2;
+const { isUtf8 } = require$$0$1;
 const { hasBlob } = constants;
 const tokenChars$2 = [
   0,
@@ -1921,7 +1921,7 @@ if (isUtf8) {
   }
 }
 var validationExports = validation.exports;
-const { Writable } = require$$0$3;
+const { Writable } = require$$0$2;
 const PerMessageDeflate$3 = permessageDeflate;
 const {
   BINARY_TYPES: BINARY_TYPES$1,
@@ -2506,7 +2506,7 @@ let Receiver$1 = class Receiver extends Writable {
   }
 };
 var receiver = Receiver$1;
-const { Duplex: Duplex$3 } = require$$0$3;
+const { Duplex: Duplex$3 } = require$$0$2;
 const { randomFillSync } = require$$1$3;
 const PerMessageDeflate$2 = permessageDeflate;
 const { EMPTY_BUFFER: EMPTY_BUFFER$1, kWebSocket: kWebSocket$2, NOOP: NOOP$1 } = constants;
@@ -3351,13 +3351,13 @@ function format$2(extensions) {
   }).join(", ");
 }
 var extension$1 = { format: format$2, parse: parse$2 };
-const EventEmitter$1 = require$$0$4;
+const EventEmitter$1 = require$$0$3;
 const https = require$$1$4;
 const http$1 = require$$2$1;
 const net = require$$3;
 const tls = require$$4;
 const { randomBytes, createHash: createHash$1 } = require$$1$3;
-const { Duplex: Duplex$2, Readable } = require$$0$3;
+const { Duplex: Duplex$2, Readable } = require$$0$2;
 const { URL } = require$$7;
 const PerMessageDeflate$1 = permessageDeflate;
 const Receiver2 = receiver;
@@ -4227,7 +4227,7 @@ function socketOnError$1() {
     this.destroy();
   }
 }
-const { Duplex: Duplex$1 } = require$$0$3;
+const { Duplex: Duplex$1 } = require$$0$2;
 function emitClose$1(stream2) {
   stream2.emit("close");
 }
@@ -4355,9 +4355,9 @@ function parse(header) {
   return protocols;
 }
 var subprotocol$1 = { parse };
-const EventEmitter = require$$0$4;
+const EventEmitter = require$$0$3;
 const http = require$$2$1;
-const { Duplex } = require$$0$3;
+const { Duplex } = require$$0$2;
 const { createHash } = require$$1$3;
 const extension = extension$1;
 const PerMessageDeflate2 = permessageDeflate;
@@ -8122,7 +8122,7 @@ var hasRequiredPackageJson;
 function requirePackageJson() {
   if (hasRequiredPackageJson) return packageJson;
   hasRequiredPackageJson = 1;
-  const fs = require$$0;
+  const fs$1 = fs;
   const path2 = require$$2;
   packageJson = {
     findAndReadPackageJson,
@@ -8141,7 +8141,7 @@ function requirePackageJson() {
       if (!fileName) {
         return void 0;
       }
-      const json = JSON.parse(fs.readFileSync(fileName, "utf8"));
+      const json = JSON.parse(fs$1.readFileSync(fileName, "utf8"));
       const name = (json == null ? void 0 : json.productName) || (json == null ? void 0 : json.name);
       if (!name || name.toLowerCase() === "electron") {
         return void 0;
@@ -8160,7 +8160,7 @@ function requirePackageJson() {
       const parsedPath = path2.parse(currentPath);
       const root = parsedPath.root;
       const dir = parsedPath.dir;
-      if (fs.existsSync(path2.join(currentPath, fileName))) {
+      if (fs$1.existsSync(path2.join(currentPath, fileName))) {
         return path2.resolve(path2.join(currentPath, fileName));
       }
       if (currentPath === root) {
@@ -8194,7 +8194,7 @@ var hasRequiredNodeExternalApi;
 function requireNodeExternalApi() {
   if (hasRequiredNodeExternalApi) return NodeExternalApi_1;
   hasRequiredNodeExternalApi = 1;
-  const childProcess = require$$0$5;
+  const childProcess = require$$0$4;
   const os = require$$1$1;
   const path2 = require$$2;
   const packageJson2 = requirePackageJson();
@@ -8561,7 +8561,7 @@ var hasRequiredInitialize;
 function requireInitialize() {
   if (hasRequiredInitialize) return initialize;
   hasRequiredInitialize = 1;
-  const fs = require$$0;
+  const fs$1 = fs;
   const os = require$$1$1;
   const path2 = require$$2;
   const preloadInitializeFn = requireElectronLogPreload();
@@ -8616,7 +8616,7 @@ function requireInitialize() {
       );
     } catch {
     }
-    if (!preloadPath || !fs.existsSync(preloadPath)) {
+    if (!preloadPath || !fs$1.existsSync(preloadPath)) {
       preloadPath = path2.join(
         externalApi.getAppUserDataPath() || os.tmpdir(),
         "electron-log-preload.js"
@@ -8628,7 +8628,7 @@ function requireInitialize() {
         console.error(e);
       }
     `;
-      fs.writeFileSync(preloadPath, preloadCode, "utf8");
+      fs$1.writeFileSync(preloadPath, preloadCode, "utf8");
     }
     externalApi.setPreloadFileForSessions({
       filePath: preloadPath,
@@ -9390,8 +9390,8 @@ var hasRequiredFile$1;
 function requireFile$1() {
   if (hasRequiredFile$1) return File_1;
   hasRequiredFile$1 = 1;
-  const EventEmitter2 = require$$0$4;
-  const fs = require$$0;
+  const EventEmitter2 = require$$0$3;
+  const fs$1 = fs;
   const os = require$$1$1;
   class File extends EventEmitter2 {
     constructor({
@@ -9416,7 +9416,7 @@ function requireFile$1() {
     }
     clear() {
       try {
-        fs.writeFileSync(this.path, "", {
+        fs$1.writeFileSync(this.path, "", {
           mode: this.writeOptions.mode,
           flag: "w"
         });
@@ -9446,7 +9446,7 @@ function requireFile$1() {
     getSize() {
       if (this.initialSize === void 0) {
         try {
-          const stats = fs.statSync(this.path);
+          const stats = fs$1.statSync(this.path);
           this.initialSize = stats.size;
         } catch (e) {
           this.initialSize = 0;
@@ -9468,7 +9468,7 @@ function requireFile$1() {
       const text = this.asyncWriteQueue.join("");
       this.asyncWriteQueue = [];
       this.hasActiveAsyncWriting = true;
-      fs.writeFile(this.path, text, this.writeOptions, (e) => {
+      fs$1.writeFile(this.path, text, this.writeOptions, (e) => {
         file2.hasActiveAsyncWriting = false;
         if (e) {
           file2.emit(
@@ -9497,7 +9497,7 @@ function requireFile$1() {
         return;
       }
       try {
-        fs.writeFileSync(this.path, text, this.writeOptions);
+        fs$1.writeFileSync(this.path, text, this.writeOptions);
         this.increaseBytesWrittenCounter(text);
       } catch (e) {
         this.emit(
@@ -9511,12 +9511,12 @@ function requireFile$1() {
   File_1 = File;
   function readFileSyncFromEnd(filePath, bytesCount) {
     const buffer = Buffer.alloc(bytesCount);
-    const stats = fs.statSync(filePath);
+    const stats = fs$1.statSync(filePath);
     const readLength = Math.min(stats.size, bytesCount);
     const offset = Math.max(0, stats.size - bytesCount);
-    const fd = fs.openSync(filePath, "r");
-    const totalBytes = fs.readSync(fd, buffer, 0, readLength, offset);
-    fs.closeSync(fd);
+    const fd = fs$1.openSync(filePath, "r");
+    const totalBytes = fs$1.readSync(fd, buffer, 0, readLength, offset);
+    fs$1.closeSync(fd);
     return buffer.toString("utf8", 0, totalBytes);
   }
   return File_1;
@@ -9549,8 +9549,8 @@ var hasRequiredFileRegistry;
 function requireFileRegistry() {
   if (hasRequiredFileRegistry) return FileRegistry_1;
   hasRequiredFileRegistry = 1;
-  const EventEmitter2 = require$$0$4;
-  const fs = require$$0;
+  const EventEmitter2 = require$$0$3;
+  const fs$1 = fs;
   const path2 = require$$2;
   const File = requireFile$1();
   const NullFile = requireNullFile();
@@ -9608,8 +9608,8 @@ function requireFileRegistry() {
      * @private
      */
     testFileWriting({ filePath, writeOptions }) {
-      fs.mkdirSync(path2.dirname(filePath), { recursive: true });
-      fs.writeFileSync(filePath, "", { flag: "a", mode: writeOptions.mode });
+      fs$1.mkdirSync(path2.dirname(filePath), { recursive: true });
+      fs$1.writeFileSync(filePath, "", { flag: "a", mode: writeOptions.mode });
     }
   }
   FileRegistry_1 = FileRegistry;
@@ -9620,7 +9620,7 @@ var hasRequiredFile;
 function requireFile() {
   if (hasRequiredFile) return file;
   hasRequiredFile = 1;
-  const fs = require$$0;
+  const fs$1 = fs;
   const os = require$$1$1;
   const path2 = require$$2;
   const FileRegistry = requireFileRegistry();
@@ -9655,7 +9655,7 @@ function requireFile() {
         const oldPath = file2.toString();
         const inf = path2.parse(oldPath);
         try {
-          fs.renameSync(oldPath, path2.join(inf.dir, `${inf.name}.old${inf.ext}`));
+          fs$1.renameSync(oldPath, path2.join(inf.dir, `${inf.name}.old${inf.ext}`));
         } catch (e) {
           logConsole("Could not rotate log", e);
           const quarterOfMaxSize = Math.round(transport.maxSize / 4);
@@ -9725,14 +9725,14 @@ function requireFile() {
     function readAllLogs({ fileFilter = (f) => f.endsWith(".log") } = {}) {
       initializeOnFirstAccess();
       const logsPath = path2.dirname(transport.resolvePathFn(pathVariables));
-      if (!fs.existsSync(logsPath)) {
+      if (!fs$1.existsSync(logsPath)) {
         return [];
       }
-      return fs.readdirSync(logsPath).map((fileName) => path2.join(logsPath, fileName)).filter(fileFilter).map((logPath) => {
+      return fs$1.readdirSync(logsPath).map((fileName) => path2.join(logsPath, fileName)).filter(fileFilter).map((logPath) => {
         try {
           return {
             path: logPath,
-            lines: fs.readFileSync(logPath, "utf8").split(os.EOL)
+            lines: fs$1.readFileSync(logPath, "utf8").split(os.EOL)
           };
         } catch {
           return null;
@@ -9910,7 +9910,7 @@ var hasRequiredMain;
 function requireMain() {
   if (hasRequiredMain) return main;
   hasRequiredMain = 1;
-  const electron = require$$0$6;
+  const electron = require$$0$5;
   const ElectronExternalApi = requireElectronExternalApi();
   const { initialize: initialize2 } = requireInitialize();
   const createDefaultLogger = requireCreateDefaultLogger();
@@ -9978,7 +9978,7 @@ if (isRenderer) {
 var srcExports = src.exports;
 const log = /* @__PURE__ */ getDefaultExportFromCjs(srcExports);
 const logDir = require$$2.join(app.getPath("userData"), "logs");
-if (!require$$0.existsSync(logDir)) require$$0.mkdirSync(logDir);
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
 log.transports.file.resolvePathFn = () => require$$2.join(logDir, "obSister.log");
 log.transports.file.level = "info";
 log.transports.console.level = "info";
@@ -9991,19 +9991,62 @@ function logError(message) {
 function logWarn(message) {
   log.warn(message);
 }
+const CONFIG_FILENAME = "config.json";
+function getConfigPath() {
+  return require$$2.join(app.getPath("userData"), CONFIG_FILENAME);
+}
+function loadConfig() {
+  const configPath = getConfigPath();
+  const defaultConfig = {
+    host: "ws://127.0.0.1:4455",
+    password: "",
+    retryDelay: 5e3
+  };
+  try {
+    if (!fs.existsSync(configPath)) {
+      fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+      logInfo(`Created default config file at ${configPath}`);
+      return defaultConfig;
+    }
+    const data = fs.readFileSync(configPath, "utf8");
+    const parsed = JSON.parse(data);
+    return { ...defaultConfig, ...parsed };
+  } catch (err) {
+    logError(`Failed to load config: ${err.message}`);
+    return defaultConfig;
+  }
+}
 const obs = new msgpack_default();
 let isConnected = false;
 let mainWindowRef = null;
 let reconnectInterval = null;
-const OBS_URL = "ws://192.168.100.2:4455";
-const OBS_PASSWORD = "mxQr49s3ts9gLqsB";
 function setMainWindow(win2) {
   mainWindowRef = win2;
 }
-async function tryConnect() {
+async function testGetInputs() {
   try {
-    await obs.connect(OBS_URL, OBS_PASSWORD);
-    logInfo("✅ Connected to OBS WebSocket");
+    const response = await obs.call("GetInputList");
+    console.log("Input LIST:", response);
+  } catch (error) {
+    console.error("❌ Error requests:", error.message);
+  }
+  try {
+    const list = await obs.call("GetOutputList");
+    console.log("GetOutputList is ", list);
+    const response = await obs.call("GetInputList");
+    logInfo("🎥 OBS Inputs:");
+    response.inputs.forEach((input) => {
+      logInfo(`- ${input.inputName} (${input.inputKind})`);
+    });
+  } catch (error) {
+    logError(`❌ Error calling GetInputList: ${error.message}`);
+  }
+}
+async function tryConnect() {
+  const cfg = loadConfig();
+  try {
+    await obs.connect(cfg.host, cfg.password);
+    logInfo(`✅ Connected to OBS WebSocket (${cfg.host})`);
     isConnected = true;
     mainWindowRef == null ? void 0 : mainWindowRef.webContents.send("obs-status", true);
     if (reconnectInterval) {
@@ -10012,16 +10055,17 @@ async function tryConnect() {
       logInfo("🟢 Stopped reconnect loop (connection established)");
     }
   } catch (error) {
-    logWarn(`OBS not reachable (${error.message}). Will retry...`);
+    logWarn(`OBS not reachable (${error.message}). Retrying in ${cfg.retryDelay / 1e3}s...`);
     isConnected = false;
     mainWindowRef == null ? void 0 : mainWindowRef.webContents.send("obs-status", false);
   }
 }
 async function startOBSConnectionLoop() {
+  const cfg = loadConfig();
   logInfo("🔄 Starting OBS connection loop...");
   await tryConnect();
   if (!reconnectInterval) {
-    reconnectInterval = setInterval(tryConnect, 5e3);
+    reconnectInterval = setInterval(tryConnect, cfg.retryDelay);
   }
 }
 function setupOBSListeners() {
@@ -10044,7 +10088,12 @@ function setupOBSListeners() {
 async function startStream(streamKey) {
   try {
     await obs.call("SetStreamServiceSettings", {
-      settings: { key: streamKey }
+      streamServiceType: "rtmp_custom",
+      streamServiceSettings: {
+        service: "Facebook Live",
+        server: "rtmps://live-api-s.facebook.com:443/rtmp/",
+        key: streamKey
+      }
     });
     await obs.call("StartStream");
     logInfo("▶️ Stream started successfully");
@@ -10116,6 +10165,7 @@ app.whenReady().then(async () => {
     win.webContents.on("did-finish-load", async () => {
       await startOBSConnectionLoop();
       sendOBSStatus(getOBSStatus());
+      setTimeout(() => testGetInputs(), 3e3);
     });
   }
 });

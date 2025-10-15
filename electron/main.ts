@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { startOBSConnectionLoop, setupOBSListeners, startStream, stopStream, getOBSStatus } from "./obsController";
+import { startOBSConnectionLoop, setupOBSListeners, startStream, stopStream, getOBSStatus, testGetInputs } from "./obsController";
 import { logInfo } from "./logger";
 import { setMainWindow } from './obsController';
 
@@ -92,6 +92,9 @@ app.whenReady().then(async () => {
     win.webContents.on("did-finish-load", async () => {
       await startOBSConnectionLoop(); // connect once window is ready
       sendOBSStatus(getOBSStatus());
+
+       // give it a few seconds to connect before testing
+      setTimeout(() => testGetInputs(), 3000);
   });
   }
 })

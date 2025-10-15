@@ -67,7 +67,7 @@ export default function ObsStatus() {
           <button
             className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white disabled:opacity-40"
             onClick={() => window.api.startStream(streamKey)}
-            disabled={!connected}
+            disabled={!connected || !streamKey}
           >
             Start Stream
           </button>

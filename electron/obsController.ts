@@ -1,23 +1,45 @@
 import OBSWebSocket from "obs-websocket-js";
 import { logInfo, logError, logWarn } from "./logger";
 import { BrowserWindow } from "electron";
+import { loadConfig } from "./config";
 
 const obs = new OBSWebSocket();
 
 let isConnected = false;
 let mainWindowRef: BrowserWindow | null = null;
 let reconnectInterval: NodeJS.Timeout | null = null;
-const OBS_URL = "ws://192.168.100.2:4455";
-const OBS_PASSWORD = "mxQr49s3ts9gLqsB";
+
 
 export function setMainWindow(win: BrowserWindow) {
   mainWindowRef = win;
 }
 
+export async function testGetInputs() {
+  try {
+    const response = await obs.call("GetInputList");
+    console.log("Input LIST:", response);
+  } catch (error: any) {
+    console.error("❌ Error requests:", error.message);
+  }
+
+  try {
+    const list = await obs.call("GetOutputList");
+    console.log("GetOutputList is ", list);
+    const response = await obs.call("GetInputList");
+    logInfo("🎥 OBS Inputs:");
+    response.inputs.forEach((input: any) => {
+      logInfo(`- ${input.inputName} (${input.inputKind})`);
+    });
+  } catch (error: any) {
+    logError(`❌ Error calling GetInputList: ${error.message}`);
+  }
+}
+
 async function tryConnect(){
-    try {
-    await obs.connect(OBS_URL, OBS_PASSWORD);
-    logInfo("✅ Connected to OBS WebSocket");
+  const cfg = loadConfig();
+  try {
+    await obs.connect(cfg.host, cfg.password);
+    logInfo(`✅ Connected to OBS WebSocket (${cfg.host})`);
     isConnected = true;
     mainWindowRef?.webContents.send("obs-status", true);
 
@@ -27,34 +49,21 @@ async function tryConnect(){
         logInfo("🟢 Stopped reconnect loop (connection established)");
     }
   } catch (error: any) {
-    logWarn(`OBS not reachable (${error.message}). Will retry...`);
+    logWarn(`OBS not reachable (${error.message}). Retrying in ${cfg.retryDelay / 1000}s...`);
     isConnected = false;
     mainWindowRef?.webContents.send("obs-status", false);
   }
 }
 
 export async function startOBSConnectionLoop() {
+  const cfg = loadConfig();
   logInfo("🔄 Starting OBS connection loop...");
   await tryConnect();
 
   if (!reconnectInterval) {
-    reconnectInterval = setInterval(tryConnect, 5000); // retry every 5 seconds
+    reconnectInterval = setInterval(tryConnect, cfg.retryDelay); // retry every 5 seconds
   }
 }
-
-
-// export async function connectOBS() {
-//   try {
-//     await obs.connect("ws://192.168.100.2:4455", "mxQr49s3ts9gLqsB");
-//     logInfo("✅ Connected to OBS WebSocket");
-//     isConnected = true;
-//     mainWindowRef?.webContents.send("obs-status", true);
-//   } catch (error: any) {
-//     logError(`❌ Failed to connect to OBS: ${error.message}`);
-//     isConnected = false;
-//     mainWindowRef?.webContents.send("obs-status", false);
-//   }
-// }
 
 export function setupOBSListeners() {
   obs.on("ConnectionOpened", () => {
@@ -80,9 +89,15 @@ export function setupOBSListeners() {
 }
 
 export async function startStream(streamKey: string) {
+
   try {
     await obs.call("SetStreamServiceSettings", {
-      settings: { key: streamKey },
+      streamServiceType: "rtmp_custom",
+      streamServiceSettings: {
+        service: "Facebook Live",
+        server: "rtmps://live-api-s.facebook.com:443/rtmp/",
+        key: streamKey,
+      },
     });
     await obs.call("StartStream");
     logInfo("▶️ Stream started successfully");
