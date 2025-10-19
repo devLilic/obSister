@@ -16,23 +16,12 @@ export function setMainWindow(win: BrowserWindow) {
 
 export async function testGetInputs() {
   try {
-    const response = await obs.call("GetInputList");
-    console.log("Input LIST:", response);
+    const response = await obs.call("GetProfileList");
+    console.log("Profiles LIST:", response);
   } catch (error: any) {
     console.error("❌ Error requests:", error.message);
   }
 
-  try {
-    const list = await obs.call("GetOutputList");
-    console.log("GetOutputList is ", list);
-    const response = await obs.call("GetInputList");
-    logInfo("🎥 OBS Inputs:");
-    response.inputs.forEach((input: any) => {
-      logInfo(`- ${input.inputName} (${input.inputKind})`);
-    });
-  } catch (error: any) {
-    logError(`❌ Error calling GetInputList: ${error.message}`);
-  }
 }
 
 async function tryConnect(){
@@ -117,4 +106,33 @@ export async function stopStream() {
 
 export function getOBSStatus() {
   return isConnected;
+}
+
+
+// -------------------- PROFILE MANAGEMENT --------------------
+
+export async function getProfileList() {
+  try {
+    const res = await obs.call("GetProfileList");
+    // Example: { currentProfileName: 'Multi Stream', profiles: ['Multi Stream', 'SingleStream'] }
+    logInfo(`📋 OBS Profiles: ${res.profiles.join(", ")} | Current: ${res.currentProfileName}`);
+    return res;
+  } catch (error: any) {
+    logError(`Failed to get profile list: ${error.message}`);
+    return { currentProfileName: null, profiles: [] };
+  }
+}
+
+/**
+ * Switch OBS to another profile
+ */
+export async function setCurrentProfile(profileName: string) {
+  try {
+    await obs.call("SetCurrentProfile", { profileName });
+    logInfo(`🔄 Switched to OBS profile: ${profileName}`);
+    return true;
+  } catch (error: any) {
+    logError(`Failed to set profile "${profileName}": ${error.message}`);
+    return false;
+  }
 }

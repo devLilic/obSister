@@ -17,6 +17,10 @@ electron.contextBridge.exposeInMainWorld("api", {
     const [channel, ...omit] = args;
     return electron.ipcRenderer.invoke(channel, ...omit);
   },
+  obsProfiles: {
+    getAll: () => electron.ipcRenderer.invoke("obs:getProfiles"),
+    set: (name) => electron.ipcRenderer.invoke("obs:setProfile", name)
+  },
   // You can expose other APTs you need here.
   onOBSStatus: (callback) => {
     electron.ipcRenderer.on("obs-status", (_, status) => callback(status));

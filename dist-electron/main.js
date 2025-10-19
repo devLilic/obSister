@@ -2,7 +2,7 @@ var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 var _a;
-import require$$0$5, { app, BrowserWindow, ipcMain } from "electron";
+import require$$0$5, { app, ipcMain, BrowserWindow } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import require$$1 from "tty";
@@ -10023,25 +10023,6 @@ let reconnectInterval = null;
 function setMainWindow(win2) {
   mainWindowRef = win2;
 }
-async function testGetInputs() {
-  try {
-    const response = await obs.call("GetInputList");
-    console.log("Input LIST:", response);
-  } catch (error) {
-    console.error("❌ Error requests:", error.message);
-  }
-  try {
-    const list = await obs.call("GetOutputList");
-    console.log("GetOutputList is ", list);
-    const response = await obs.call("GetInputList");
-    logInfo("🎥 OBS Inputs:");
-    response.inputs.forEach((input) => {
-      logInfo(`- ${input.inputName} (${input.inputKind})`);
-    });
-  } catch (error) {
-    logError(`❌ Error calling GetInputList: ${error.message}`);
-  }
-}
 async function tryConnect() {
   const cfg = loadConfig();
   try {
@@ -10112,6 +10093,38 @@ async function stopStream() {
 function getOBSStatus() {
   return isConnected;
 }
+async function getProfileList() {
+  try {
+    const res = await obs.call("GetProfileList");
+    logInfo(`📋 OBS Profiles: ${res.profiles.join(", ")} | Current: ${res.currentProfileName}`);
+    return res;
+  } catch (error) {
+    logError(`Failed to get profile list: ${error.message}`);
+    return { currentProfileName: null, profiles: [] };
+  }
+}
+async function setCurrentProfile(profileName) {
+  try {
+    await obs.call("SetCurrentProfile", { profileName });
+    logInfo(`🔄 Switched to OBS profile: ${profileName}`);
+    return true;
+  } catch (error) {
+    logError(`Failed to set profile "${profileName}": ${error.message}`);
+    return false;
+  }
+}
+function registerIpcHandlers() {
+  ipcMain.on("start-stream", async (_e, key) => await startStream(key));
+  ipcMain.on("stop-stream", async () => await stopStream());
+  ipcMain.handle("obs:getProfiles", async () => {
+    const data = await getProfileList();
+    console.log("🔍 Sending profile list to renderer:", data);
+    return data;
+  });
+  ipcMain.handle("obs:setProfile", async (_event, profileName) => {
+    return await setCurrentProfile(profileName);
+  });
+}
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -10141,7 +10154,6 @@ function createWindow() {
   } else {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
-  win.webContents.openDevTools();
   win.on("closed", () => {
     win = null;
   });
@@ -10160,17 +10172,16 @@ app.on("activate", () => {
 app.whenReady().then(async () => {
   logInfo("🟢 obSister started");
   createWindow();
+  registerIpcHandlers();
   setupOBSListeners();
   if (win) {
     win.webContents.on("did-finish-load", async () => {
       await startOBSConnectionLoop();
       sendOBSStatus(getOBSStatus());
-      setTimeout(() => testGetInputs(), 3e3);
+      setTimeout(() => getProfileList(), 3e3);
     });
   }
 });
-ipcMain.on("start-stream", async (_e, key) => await startStream(key));
-ipcMain.on("stop-stream", async () => await stopStream());
 export {
   MAIN_DIST,
   RENDERER_DIST,

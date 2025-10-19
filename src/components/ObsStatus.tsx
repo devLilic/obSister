@@ -1,14 +1,5 @@
 import { useEffect, useState } from "react";
 
-declare global {
-  interface Window {
-    api: {
-      onOBSStatus: (callback: (status: boolean) => void) => void;
-      startStream: (key: string) => void;
-      stopStream: () => void;
-    };
-  }
-}
 
 export default function ObsStatus() {
   const [connected, setConnected] = useState(false);

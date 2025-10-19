@@ -19,6 +19,12 @@ contextBridge.exposeInMainWorld('api', {
     return ipcRenderer.invoke(channel, ...omit)
   },
 
+  obsProfiles: {
+    getAll: () => ipcRenderer.invoke("obs:getProfiles"),
+    set: (name: string) => ipcRenderer.invoke("obs:setProfile", name),
+  },
+
+
   // You can expose other APTs you need here.
   onOBSStatus: (callback: (status: boolean) => void) => {
     ipcRenderer.on("obs-status", (_, status) => callback(status));

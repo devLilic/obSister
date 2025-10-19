@@ -1,21 +1,13 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { startOBSConnectionLoop, setupOBSListeners, startStream, stopStream, getOBSStatus, testGetInputs } from "./obsController";
+import { startOBSConnectionLoop, setupOBSListeners, getOBSStatus, testGetInputs, getProfileList } from "./obsController";
 import { logInfo } from "./logger";
 import { setMainWindow } from './obsController';
+import { registerIpcHandlers } from './ipcHandlers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
 process.env.APP_ROOT = path.join(__dirname, '..')
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
@@ -56,7 +48,7 @@ function createWindow() {
   }
 
   // Uncomment below to open the DevTools:
-  win.webContents.openDevTools()
+  // win.webContents.openDevTools()
 
   win.on("closed", () => {
     win = null;
@@ -86,6 +78,7 @@ app.on('activate', () => {
 app.whenReady().then(async () => {
   logInfo("🟢 obSister started");
   createWindow();
+  registerIpcHandlers();
   setupOBSListeners();
 
   if(win){
@@ -94,11 +87,9 @@ app.whenReady().then(async () => {
       sendOBSStatus(getOBSStatus());
 
        // give it a few seconds to connect before testing
-      setTimeout(() => testGetInputs(), 3000);
+      setTimeout(() => getProfileList(), 3000);
   });
   }
 })
 
-// IPC events from renderer
-ipcMain.on("start-stream", async (_e, key) => await startStream(key))
-ipcMain.on("stop-stream", async () =>  await stopStream())
+
