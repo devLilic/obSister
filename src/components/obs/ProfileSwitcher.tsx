@@ -20,13 +20,26 @@ const ProfileSwitcher: React.FC = () => {
         }
       } catch (err) {
         console.error("Failed to load profiles:", err);
+        if (isMounted) {
+          setProfiles([]);
+          setCurrent("");
+        }
       }
     }
 
     loadProfiles();
 
+      // 👇 NEW: reload when OBS reconnects
+    const handleReconnect = () => {
+      console.log("🔁 OBS reconnected, reloading profiles...");
+      loadProfiles();
+    };
+
+    window.api.on("obs-reconnected", handleReconnect);
+
     return () => {
       isMounted = false;
+      window.api.off("obs-reconnected", handleReconnect);
     };
   }, []);
 
@@ -41,6 +54,7 @@ const ProfileSwitcher: React.FC = () => {
     <div className="mt-6">
       <h2 className="font-semibold mb-2">Active Profile: {current || "Loading..."}</h2>
       <select
+        title="select profile"
         value={current}
         onChange={(e) => switchProfile(e.target.value)}
         className="border rounded p-2"
