@@ -1,3 +1,5 @@
+import { OBSConfig } from "./types";
+
 export {};
 
 declare global {
@@ -94,16 +96,8 @@ declare global {
       };
 
       config: {
-        get: () => Promise<{
-          host: string;
-          password: string;
-          retryDelay: number;
-        }>;
-        save: (data: {
-          host: string;
-          password: string;
-          retryDelay: number;
-        }) => Promise<{ success: boolean; error?: string }>;
+        get: () => Promise<OBSConfig>;
+        save: (data: OBSConfig) => Promise<{ success: boolean; error?: string }>;
       };
 
       logs: {
@@ -118,6 +112,14 @@ declare global {
       off: (channel: string, listener: (...args: any[]) => void) => void;
       send: (channel: string, ...args: any[]) => void;
       invoke: (channel: string, ...args: any[]) => Promise<any>;
+    };
+    google: {
+      testConnection: (
+        sheetId: string,
+        keyPath: string,
+        tabName: string
+      ) => Promise<{ success: boolean; message: string }>;
+      syncSchedule: () => Promise<{ success: boolean; message: string }>;
     };
   }
 }

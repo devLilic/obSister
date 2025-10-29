@@ -1,6 +1,7 @@
 // electron/main/preload.ts
 import { contextBridge, ipcRenderer } from "electron";
 import { ScheduleItem } from "./schedule/types";
+import { OBSConfig } from "../types/types";
 
 contextBridge.exposeInMainWorld("api", {
   // -----------------------------
@@ -57,11 +58,17 @@ contextBridge.exposeInMainWorld("api", {
 
   config: {
     get: () => ipcRenderer.invoke("config:get"),
-    save: (data) => ipcRenderer.invoke("config:save", data),
+    save: (data: OBSConfig) => ipcRenderer.invoke("config:save", data),
   },
 
   logs: {
     load: () => ipcRenderer.invoke("logs:load"),
     clear: () => ipcRenderer.invoke("logs:clear"),
+  },
+
+  google: {
+    testConnection: (sheetId: string, keyPath: string, tabName: string) =>
+      ipcRenderer.invoke("google:testConnection", { sheetId, keyPath, tabName }),
+    syncSchedule: () => ipcRenderer.invoke("google:syncSchedule"),
   },
 });

@@ -16,6 +16,7 @@ import { registerScheduleIpc } from "./ipc/scheduleHandlers";
 import { startStreamScheduler, stopStreamScheduler } from "./scheduler/streamScheduler";
 import { registerConfigIpc } from "./ipc/configHandlers";
 import { registerLogsIpc } from "./ipc/logsHandlers";
+import { registerGoogleIpc } from "./ipc/googleHandlers";
 
 dotenv.config();
 
@@ -71,6 +72,7 @@ app.whenReady().then(async () => {
   attachLogWindow(win); // ✅ This enables live logs
   registerConfigIpc();
   registerLogsIpc();
+  registerGoogleIpc();
 
   registerIpcHandlers();
   setupOBSListeners();

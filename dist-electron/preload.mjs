@@ -49,5 +49,9 @@ electron.contextBridge.exposeInMainWorld("api", {
   logs: {
     load: () => electron.ipcRenderer.invoke("logs:load"),
     clear: () => electron.ipcRenderer.invoke("logs:clear")
+  },
+  google: {
+    testConnection: (sheetId, keyPath, tabName) => electron.ipcRenderer.invoke("google:testConnection", { sheetId, keyPath, tabName }),
+    syncSchedule: () => electron.ipcRenderer.invoke("google:syncSchedule")
   }
 });
