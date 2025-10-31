@@ -14,6 +14,10 @@ export function setMainWindow(win: BrowserWindow) {
   mainWindow = win;
 }
 
+export function getMainWindow(): BrowserWindow | null {
+  return mainWindow;
+}
+
 /**
  * Attempt to connect to OBS.
  */

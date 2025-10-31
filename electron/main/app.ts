@@ -46,19 +46,37 @@ function createMainWindow() {
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    mainWindow.loadFile(path.join(process.env.APP_ROOT!, "dist/index.html"));
+    const indexPath = path.join(process.resourcesPath, 'dist', 'index.html');
+    console.log('Loading from:', indexPath);
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('Failed to load index.html', err);
+    });
+    // const appPath = app.isPackaged
+    //   ? path.join(process.resourcesPath, 'dist', 'index.html')
+    //   : path.join(__dirname, '../dist/index.html');
+    // mainWindow.loadFile(appPath);
+    // // const indexPath = path.join(__dirname, '../dist/index.html');
+    // // console.log('Loading file:', indexPath);
+    // // mainWindow.loadFile(indexPath);
+    // mainWindow.loadFile(path.join(process.resourcesPath, "app.asar", "index.html"));
   }
 
   // Optional: open devtools during development
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools({mode: "detach"});
 
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
 
+  mainWindow.webContents.on('did-fail-load', (e, code, desc) => {
+    console.error('Failed to load renderer:', e, code, desc);
+  });
+
   return mainWindow;
 }
+
 
 // -------------------------
 // App Lifecycle

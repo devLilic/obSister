@@ -29,6 +29,7 @@ export async function stopStream() {
   try {
     await obs.call("StopStream");
     logInfo("⏹ Stream stopped successfully");
+    
   } catch (error: any) {
     logError(`Failed to stop stream: ${error.message}`);
   }

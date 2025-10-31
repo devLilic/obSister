@@ -63,36 +63,8 @@ declare global {
       // ✅ SCHEDULE MANAGEMENT
       // -----------------------------
       schedule: {
-        /**
-         * Get all scheduled stream items.
-         * @returns Promise<ScheduleItem[]>
-         */
-        get: () => Promise<
-          {
-            id: string;
-            name: string;
-            platform: "facebook" | "youtube" | "multi";
-            startTime: string;
-            durationMinutes: number;
-            fbKey?: string;
-            autoStart?: boolean;
-          }[]
-        >;
-
-        /**
-         * Save or update the list of scheduled stream items.
-         */
-        save: (
-          items: {
-            id: string;
-            name: string;
-            platform: "facebook" | "youtube" | "multi";
-            startTime: string;
-            durationMinutes: number;
-            fbKey?: string;
-            autoStart?: boolean;
-          }[]
-        ) => Promise<boolean>;
+        get: () => Promise<ScheduleItem[]>;
+        save: (items: ScheduleItem[]) => Promise<boolean>;
       };
 
       config: {
@@ -105,6 +77,16 @@ declare global {
         clear: () => Promise<{ success: boolean; error?: string }>;
       };
 
+      google: {
+        syncSchedule: () => Promise<{ success: boolean; message: string }>;
+        testConnection: (
+          sheetId: string,
+          keyPath: string,
+          tabName: string
+        ) => Promise<{ success: boolean; message: string }>;  
+        
+      };
+
       // -----------------------------
       // ⚙️ GENERIC IPC HELPERS
       // -----------------------------
@@ -112,14 +94,6 @@ declare global {
       off: (channel: string, listener: (...args: any[]) => void) => void;
       send: (channel: string, ...args: any[]) => void;
       invoke: (channel: string, ...args: any[]) => Promise<any>;
-    };
-    google: {
-      testConnection: (
-        sheetId: string,
-        keyPath: string,
-        tabName: string
-      ) => Promise<{ success: boolean; message: string }>;
-      syncSchedule: () => Promise<{ success: boolean; message: string }>;
     };
   }
 }

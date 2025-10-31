@@ -49,19 +49,26 @@ export async function syncScheduleFromGoogle() {
     }
 
     // Convert Google rows to obSister schedule
-    const schedule = rows.map((r, i) => {
+    const schedule = rows.filter(r => r[0] && r[1] && r[2] && r[5]).map((r, i) => {
       const [title, start, duration, fb, yt, fbKey] = r;
       const platforms =
-        fb.toLowerCase() === "true" && yt.toLowerCase() === "true" ? "multi" : "facebook";
+        fb?.toLowerCase() === "true" && yt.toLowerCase() === "true" ? "multi" : "facebook";
 
       const [h, m] = (start || "00:00").split(":").map(Number);
-      const startTime = new Date();
-      startTime.setHours(h, m, 0, 0);
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      const hh = String(h).padStart(2, "0");
+      const mi = String(m).padStart(2, "0");
+
+      // ✅ Build local datetime string, no UTC shift, no "Z"
+      const localDateTime = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 
       return {
         id: `${title}-${i}`,
         name: title || "Untitled",
-        startTime: startTime.toISOString(),
+        startTime: localDateTime,            // ✅ clean local format
         durationMinutes: parseInt(duration || "0", 10),
         platform: platforms,
         fbKey: fbKey || "",

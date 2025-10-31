@@ -64,7 +64,7 @@ export default function LogsPanel() {
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="h-40 overflow-y-auto font-mono pr-2"
+        className="h-20 overflow-y-auto font-mono pr-2"
       >
         {logs.length === 0 ? (
           <div className="text-gray-500">No logs yet...</div>

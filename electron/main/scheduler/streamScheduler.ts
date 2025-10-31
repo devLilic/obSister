@@ -2,22 +2,19 @@
 import fs from "fs";
 import path from "path";
 import { app, BrowserWindow } from "electron";
-import { obs } from "../obs/connection";
+import { getMainWindow, obs } from "../obs/connection";
 import { ensureProfile } from "../obs/profile";
 import { startStream as startFacebookStream, stopStream as stopObsStream } from "../obs/controller";
 import { logInfo, logWarn, logError } from "../config/logger";
+import { ScheduleItem } from "../../types/types";
 
-type Platform = "facebook" | "youtube" | "multi";
+type Platform = ScheduleItem["platform"];
 
-export interface ScheduleItem {
-  id: string;
-  name: string;
-  platform: Platform;
-  startTime: string;          // ISO string
-  durationMinutes: number;
-  fbKey?: string;             // needed for facebook / multi
-  autoStart?: boolean;        // optional (default true)
-}
+let failureCount = 0;          // consecutive failures counter
+const MAX_FAILURES = 5;        // stop auto attempts after this
+let pausedDueToFailures = false;
+const warnedNoKey = new Set<string>(); // store item.id values
+
 
 /** Where we store the user’s schedule */
 const schedulePath = path.join(app.getPath("userData"), "schedule.json");
@@ -39,6 +36,29 @@ function loadSchedule(): ScheduleItem[] {
     return [];
   }
 }
+
+async function safeCall<T>(fn: () => Promise<T>, context: string): Promise<T | null> {
+  try {
+    const result = await fn();
+    failureCount = 0; // ✅ success → reset
+    return result;
+  } catch (err: any) {
+    failureCount++;
+    logError(`❌ Scheduler error during ${context}: ${err.message || err}`);
+    if (failureCount >= MAX_FAILURES) {
+      pausedDueToFailures = true;
+      logError(`⚠️ Scheduler paused after ${failureCount} consecutive failures.`);
+      // optionally, notify the renderer/UI
+      const win = getMainWindow();
+      win?.webContents.send("scheduler-paused", {
+        reason: "too many errors",
+        count: failureCount,
+      });
+    }
+    return null;
+  }
+}
+
 
 function iso(s: string) { return new Date(s); }
 function addMinutes(d: Date, m: number) { return new Date(d.getTime() + m * 60000); }
@@ -93,15 +113,21 @@ async function stopIfStreaming(reason: string) {
 
 /** core clock: checks schedule every 5 seconds */
 async function tick(_win?: BrowserWindow) {
+  // ⛔ pause if too many failures
+  if (pausedDueToFailures) {
+    logWarn("⏸ Scheduler paused due to repeated errors.");
+    return;
+  }
+
   const list = loadSchedule();
   const now = new Date();
-
-  // identify current & next
   let current: ScheduleItem | undefined;
+
+  // find the active item
   for (const item of list) {
     const start = iso(item.startTime);
     const end = addMinutes(start, item.durationMinutes);
-    const auto = item.autoStart !== false; // default true
+    const auto = item.autoStart !== false;
 
     if (!auto) continue;
     if (now >= start && now < end) {
@@ -110,24 +136,39 @@ async function tick(_win?: BrowserWindow) {
     }
   }
 
-  if (current) {
-    // Should be streaming this item
-    if (!state.isStreaming || state.activeId !== current.id) {
-      await startForItem(current);
-    } else {
-      // already streaming the right item: check for end
-      const end = addMinutes(iso(current.startTime), current.durationMinutes);
-      if (now >= end) {
-        await stopIfStreaming("duration elapsed");
-      }
-    }
-  } else {
-    // No current item; stop if something is still streaming
+  // ✅ No current item
+  if (!current) {
     if (state.isStreaming) {
-      await stopIfStreaming("no scheduled item active");
+      await safeCall(() => stopIfStreaming("no scheduled item active"), "stop unscheduled");
+    }
+    return;
+  }
+
+  // ✅ Current item found — check if it has a Facebook key
+  if (!current.fbKey || !current.fbKey.trim()) {
+    if (!warnedNoKey.has(current.id)) {
+      logWarn(`Scheduler: "${current.name}" needs a Facebook key but none provided`);
+      warnedNoKey.add(current.id);
+    }
+    // ensure we are not streaming wrong/empty key
+    if (state.isStreaming && state.activeId === current.id) {
+      await safeCall(() => stopIfStreaming("missing FB key"), "stop missing key");
+    }
+    return; // skip trying to start
+  }
+
+  // ✅ Now, handle start/stop normally
+  if (!state.isStreaming || state.activeId !== current.id) {
+    await safeCall(() => startForItem(current), `start ${current.name}`);
+  } else {
+    const end = addMinutes(iso(current.startTime), current.durationMinutes);
+    if (now >= end) {
+      await safeCall(() => stopIfStreaming("duration elapsed"), "stop after duration");
     }
   }
 }
+
+
 
 export function startStreamScheduler(win?: BrowserWindow) {
   if (tickTimer) return; // already running

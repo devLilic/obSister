@@ -27,12 +27,6 @@ export function attachLogWindow(win: BrowserWindow) {
  * Internal helper to broadcast log messages to renderer if window is ready
  */
 function broadcastLog(level: string, message: string) {
-  // const payload = { level, message, timestamp: new Date().toISOString() };
-  // console.log("📤 Sending log-message to renderer:", payload); // 👈 Add this
-  // if (mainWindow && mainWindow.webContents) {
-  //   mainWindow.webContents.send("log-message", payload);
-  // }
-
   if (mainWindow && mainWindow.webContents) {
     mainWindow.webContents.send("log-message", { level, message, timestamp: new Date().toISOString() });
   }

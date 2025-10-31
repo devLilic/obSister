@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useScheduleStatus } from "../hooks/useScheduleStatus";
-import { ScheduleItem } from "../../electron/main/schedule/types";
+import { ScheduleItem } from "../../electron/types/types";
 
 
 export default function SchedulerStatusBadge() {

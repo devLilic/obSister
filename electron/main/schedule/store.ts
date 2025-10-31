@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { app } from "electron";
-import { ScheduleItem } from "./types";
 import { logInfo, logError } from "../config/logger";
+import { ScheduleItem } from "../../types/types";
 
 const schedulePath = path.join(app.getPath("userData"), "schedule.json");
 

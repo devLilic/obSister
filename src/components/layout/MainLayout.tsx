@@ -4,6 +4,7 @@ import Logo from "../Logo";
 import Clock from "../Clock";
 import OBSStatusIndicator from "../OBSStautsIndicator";
 import { Link, useLocation } from "react-router-dom";
+import LogsPanel from "../obs/LogsPanel";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -38,8 +39,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
         {children}
       </main>
 
-      <footer className="bg-gray-800 text-center py-2 text-gray-500 text-sm">
-        OBS Stream Manager © {new Date().getFullYear()}
+      <footer className="text-gray-500 text-sm">
+        <LogsPanel />
+
+        <div className="bg-gray-800 text-center py-2 ">
+          OBS Stream Manager © {new Date().getFullYear()}. Built with ❤️ by devLilic13.
+        </div>
       </footer>
     </div>
   );

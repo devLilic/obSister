@@ -1,7 +1,6 @@
 // electron/main/preload.ts
 import { contextBridge, ipcRenderer } from "electron";
-import { ScheduleItem } from "./schedule/types";
-import { OBSConfig } from "../types/types";
+import { OBSConfig, ScheduleItem } from "../types/types";
 
 contextBridge.exposeInMainWorld("api", {
   // -----------------------------
@@ -28,6 +27,7 @@ contextBridge.exposeInMainWorld("api", {
     startSmart: (key: string, mode: "single" | "multi") =>
       ipcRenderer.invoke("obs:startSmartStream", { key, mode }),
   },
+  
 
   // -----------------------------
   // ✅ OBS Profile Change Events
@@ -67,8 +67,8 @@ contextBridge.exposeInMainWorld("api", {
   },
 
   google: {
+    syncSchedule: () => ipcRenderer.invoke("google:syncSchedule"),
     testConnection: (sheetId: string, keyPath: string, tabName: string) =>
       ipcRenderer.invoke("google:testConnection", { sheetId, keyPath, tabName }),
-    syncSchedule: () => ipcRenderer.invoke("google:syncSchedule"),
   },
 });

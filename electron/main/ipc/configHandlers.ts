@@ -1,6 +1,7 @@
 import { ipcMain } from "electron";
-import { loadConfig, OBSConfig, saveConfig } from "../config/config";
+import { loadConfig, saveConfig } from "../config/config";
 import { logInfo, logError } from "../config/logger";
+import { OBSConfig } from "../../types/types";
 
 export function registerConfigIpc() {
   // Get current config

@@ -1,14 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import TextInput from "./ui/TextInput";
 import SelectInput from "./ui/SelectInput";
 import { Button } from "./ui/Button";
-import { ScheduleItem } from "../../electron/main/schedule/types";
-import SchedulerStatusBadge from "./SchedulerStatusBadge";
+import { ScheduleItem } from "../../electron/types/types";
+
+
 
 export default function ScheduleList() {
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -24,10 +28,10 @@ export default function ScheduleList() {
       ...items,
       {
         id: uuidv4(),
-        name: "New Stream",
-        platform: "facebook",
+        name: "",
+        platform: "multi",
         startTime: now,
-        durationMinutes: 30,
+        durationMinutes: 52,
         fbKey: "",
       },
     ]);
@@ -47,27 +51,59 @@ export default function ScheduleList() {
     alert("Schedule saved!");
   };
 
+  useEffect(() => {
+    // Clear sync message after 5 seconds
+    if (!syncMessage) return;
+    const timer = setTimeout(() => setSyncMessage(""), 5000);
+    return () => clearTimeout(timer);
+  }, [syncMessage]);
+
+  const syncSchedule = async () => {
+    setSyncing(true);
+    const result = await window.api.google.syncSchedule();
+    setSyncMessage(result.message);
+    setSyncing(false);
+
+    // 🔄 Reload updated schedule from file immediately after sync
+    const updated = await window.api.schedule.get();
+    setItems(updated);
+  };
+
   if (loading) return <div>Loading schedule...</div>;
 
   return (
     <div className="mt-8 bg-gray-900 p-4 rounded border border-gray-700 text-gray-100">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold flex items-center justify-center flex-row">📅 Schedule | <SchedulerStatusBadge/></h2>
-        <div className="flex gap-2">
-          <button
-            onClick={addItem}
-            className="bg-green-600 px-3 py-1 rounded hover:bg-green-700"
-          >
-            + Add
-          </button>
-          <button
-            onClick={saveAll}
-            className="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
+      <h2 className="text-lg font-semibold flex items-center justify-center flex-row"> 📅 Schedule </h2>
+      <div className="text-sm text-gray-400">{syncMessage}</div>
+      <div className="flex gap-2 items-center">
+        <button
+          onClick={addItem}
+          className="bg-green-600 px-3 py-1 rounded hover:bg-green-700"
+        >
+          + Add
+        </button>
+
+        <button
+          onClick={saveAll}
+          className="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700"
+        >
+          Save
+        </button>
+
+        <button
+          onClick={syncSchedule}
+          disabled={syncing}
+          className={`px-3 py-1 rounded font-semibold ${
+            syncing ? "bg-gray-600 cursor-wait" : "bg-yellow-600 hover:bg-yellow-700 text-white"
+          }`}
+          title="Load today's schedule"
+        >
+          {syncing ? "Updating..." : "Update Schedule"}
+        </button>
+
       </div>
+    </div>
 
       
 
@@ -121,12 +157,12 @@ export default function ScheduleList() {
                     </td>
                     <td className="p-1">
                         <TextInput
-                            label="Start time"
-                            type="datetime-local"
-                            value={i.startTime.slice(0, 16)}
-                            onChange={(e) => updateItem(i.id, "startTime", e.target.value)}
+                          label="Start time"
+                          type="datetime-local"
+                          value={i.startTime.slice(0, 16)}
+                          onChange={(e) => updateItem(i.id, "startTime", e.target.value)}
                         />
-                    </td>
+                      </td>
                     <td className="p-1">
                         <TextInput
                             label="Duration (minutes)"
@@ -157,7 +193,7 @@ export default function ScheduleList() {
                     <td className="p-1 text-center">
                         <Button
                             onClick={() => removeItem(i.id)}
-                            className="bg-red-600 px-2 py-1 rounded hover:bg-red-700"
+                            className="bg-red-600 rounded hover:bg-red-700"
                         >
                             ✕
                         </Button>

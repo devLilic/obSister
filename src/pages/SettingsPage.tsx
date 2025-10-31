@@ -54,11 +54,11 @@ export default function SettingsPage() {
   };
 
   const update = (key: keyof OBSConfig, value: any) =>
-    setConfig((prev) => (prev ? { ...prev, [key]: value } : null));
+    setConfig((prev) => (prev ? { ...prev, [key]: value } : defaultConfig));
 
   const updateGoogle = (key: keyof OBSConfig["google"], value: any) =>
     setConfig((prev) =>
-      prev ? { ...prev, google: { ...prev.google, [key]: value } } : null
+      prev ? { ...prev, google: { ...prev.google, [key]: value } } : defaultConfig
     );
 
   const save = async () => {
