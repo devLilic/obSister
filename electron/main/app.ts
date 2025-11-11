@@ -48,7 +48,7 @@ function createMainWindow() {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    const indexPath = path.join(process.resourcesPath, 'dist', 'index.html');
+    const indexPath = path.join(process.resourcesPath, 'index.html');
     console.log('Loading from:', indexPath);
     mainWindow.loadFile(indexPath).catch((err) => {
       console.error('Failed to load index.html', err);
