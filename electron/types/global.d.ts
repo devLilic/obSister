@@ -65,6 +65,7 @@ declare global {
       schedule: {
         get: () => Promise<ScheduleItem[]>;
         save: (items: ScheduleItem[]) => Promise<boolean>;
+        setStatus: (id: string, status: ScheduleItemStatus) => Promise<boolean>;
       };
 
       config: {

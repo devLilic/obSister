@@ -72,6 +72,7 @@ export async function syncScheduleFromGoogle() {
         durationMinutes: parseInt(duration || "0", 10),
         platform: platforms,
         fbKey: fbKey || "",
+        status: "upcoming",
       };
     });
 

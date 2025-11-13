@@ -1,16 +1,9 @@
-import { useEffect, useState } from "react";
 import { useScheduleStatus } from "../hooks/useScheduleStatus";
-import { ScheduleItem } from "../../electron/types/types";
-
 
 export default function SchedulerStatusBadge() {
-  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
 
-  useEffect(() => {
-    window.api.schedule.get().then(setSchedule);
-  }, []);
-
-  const { current, next, timeToNext, timeToEnd } = useScheduleStatus(schedule);
+  // Get live/next/time statuses
+  const { current, next, timeToNext, timeToEnd } = useScheduleStatus();
 
   let statusText = "Idle";
   let statusColor = "bg-gray-600";
@@ -27,6 +20,7 @@ export default function SchedulerStatusBadge() {
     <div className="flex items-center gap-2 ml-2">
       <span className={`inline-block w-3 h-3 rounded-full shadow-md ${statusColor}`}></span>
       <span className="text-sm font-medium text-gray-200">{statusText}</span>
+
       {current && (
         <span className="text-xs text-gray-400 ml-2">
           (Ends in {timeToEnd})

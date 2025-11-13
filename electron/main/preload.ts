@@ -1,6 +1,6 @@
 // electron/main/preload.ts
 import { contextBridge, ipcRenderer } from "electron";
-import { OBSConfig, ScheduleItem } from "../types/types";
+import { OBSConfig, ScheduleItem, ScheduleItemStatus } from "../types/types";
 
 contextBridge.exposeInMainWorld("api", {
   // -----------------------------
@@ -54,6 +54,8 @@ contextBridge.exposeInMainWorld("api", {
   schedule: {
     get: () => ipcRenderer.invoke("schedule:get"),
     save: (list: ScheduleItem[]) => ipcRenderer.invoke("schedule:save", list),
+    setStatus: (id: string, status: ScheduleItemStatus) =>
+      ipcRenderer.invoke("schedule:setStatus", { id, status }),
   },
 
   config: {

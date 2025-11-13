@@ -11,13 +11,20 @@ export interface OBSConfig {
   };
 }
 
+export type ScheduleItemStatus =
+  | "upcoming"        // încă nu a început, startTime > now
+  | "live"            // item-ul este în desfășurare (stream activ)
+  | "expired"         // durata a trecut normal
+  | "terminated";     // stream oprit manual înainte de expirare
 
 export interface ScheduleItem {
   id: string;
   name: string;
   platform: "facebook" | "youtube" | "multi";
-  startTime: string;         // ISO string
+  startTime: string;           // ISO format
   durationMinutes: number;
   fbKey?: string;
   autoStart?: boolean;
+
+  status: ScheduleItemStatus;
 }
