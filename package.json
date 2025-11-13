@@ -1,17 +1,20 @@
 {
   "name": "obsister",
-  "productName": "obSister",
+  "productName": "OBSister",
   "private": true,
   "version": "0.1.0",
   "description": "Smart assistant for OBS streaming automation",
   "author": "devLilic13",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-old-space-size=4096 vite & wait-on http://localhost:5173 && electron .",
-    "build": "tsc && vite build && electron-builder"
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite",
+    "build": "tsc && vite build && electron-builder",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
   },
   "dependencies": {
     "bufferutil": "^4.0.9",
+    "concurrently": "^9.2.1",
     "dotenv": "^17.2.3",
     "electron-log": "^5.4.3",
     "googleapis": "^164.1.0",

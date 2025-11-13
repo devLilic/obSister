@@ -27,3 +27,4 @@ google-service-key.json
 google.json
 .env
 dist-electron
+release

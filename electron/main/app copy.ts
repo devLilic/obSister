@@ -1,5 +1,6 @@
 // electron/main/app.ts
 import { app, BrowserWindow } from "electron";
+import fs from "fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
@@ -19,21 +20,17 @@ import { registerGoogleIpc } from "./ipc/googleHandlers";
 
 dotenv.config();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+function resolvePreload() {
+  const mjs = path.join(__dirname, "preload.mjs");
+  const js = path.join(__dirname, "preload.js");
+  return fs.existsSync(mjs) ? mjs : js;
+}
 
-process.env.APP_ROOT = path.join(__dirname, '..')
-
-// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
-export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
-export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
-
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow: BrowserWindow | null = null;
 
-function createWindow() {
+function createMainWindow() {
 
   mainWindow = new BrowserWindow({
     width: 1000,
@@ -41,20 +38,33 @@ function createWindow() {
     title: "obSister",
     icon: path.join(process.env.VITE_PUBLIC || "", "electron-vite.svg"),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: resolvePreload(),
     },
   });
 
   setMainWindow(mainWindow);
 
-  if (VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(VITE_DEV_SERVER_URL)
+  if (process.env.VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    mainWindow.loadFile(path.join(RENDERER_DIST, 'index.html'))
+    const indexPath = path.join(process.resourcesPath, 'index.html');
+    console.log('Loading from:', indexPath);
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('Failed to load index.html', err);
+    });
+    // const appPath = app.isPackaged
+    //   ? path.join(process.resourcesPath, 'dist', 'index.html')
+    //   : path.join(__dirname, '../dist/index.html');
+    // mainWindow.loadFile(appPath);
+    // // const indexPath = path.join(__dirname, '../dist/index.html');
+    // // console.log('Loading file:', indexPath);
+    // // mainWindow.loadFile(indexPath);
+    // mainWindow.loadFile(path.join(process.resourcesPath, "app.asar", "index.html"));
   }
 
   // Optional: open devtools during development
-  // mainWindow.webContents.openDevTools({mode: "detach"});
+  mainWindow.webContents.openDevTools({mode: "detach"});
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -75,7 +85,7 @@ function createWindow() {
 app.whenReady().then(async () => {
   logInfo("🟢 obSister launched");
 
-  const win = createWindow();
+  const win = createMainWindow();
   registerScheduleIpc();
   attachLogWindow(win); // ✅ This enables live logs
   registerConfigIpc();
@@ -97,7 +107,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
 });
 
 // On quit, stop scheduler (and optionally disconnect OBS)
