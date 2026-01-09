@@ -1,83 +1,102 @@
-import { useState } from "react";
-import { useSchedule } from "../context/ScheduleContext";
-import { useScheduleStatus } from "../hooks/useScheduleStatus";
+// filepath: src/components/ScheduleStatusPanel.tsx
+import { useScheduleStatusPanelViewModel } from "../hooks/useScheduleStatusPanelViewModel";
+import AutoStopPanel from "./obs/AutoStopPanel.tsx";
+
+function normalizeReason(reasonLabel?: string) {
+    if (!reasonLabel) return undefined;
+    if (reasonLabel.toLowerCase().includes("obs disconnected")) {
+        return "OBS disconnected — stream ended";
+    }
+    return reasonLabel;
+}
+
+function titleFromVariant(variant: "idle" | "live" | "ending" | "ended" | "error") {
+    if (variant === "live") return "LIVE NOW";
+    if (variant === "ending") return "Ending…";
+    if (variant === "ended") return "Ended";
+    if (variant === "error") return "Error";
+    return "Idle";
+}
 
 export default function ScheduleStatusPanel() {
-  const { setItemStatus } = useSchedule();
-  const { current, next, timeToNext, timeToEnd, refreshStatus } = useScheduleStatus();
+    const {
+        label,
+        variant,
+        reasonLabel,
 
-  const [isStopping, setIsStopping] = useState(false);
+        activeItemName,
+        activeItemPlatform,
 
-  const stopCurrentLive = async () => {
-    if (!current) return;
-    setIsStopping(true);
+        nextName,
+        timeToNext,
+        timeToEnd,
 
-    try {
-      // Stop streaming in OBS
-      await window.api.stream.stop();
+        isStopping,
+        stopCurrentLive,
 
-      // Mark schedule item as terminated
-      await setItemStatus(current.id, "terminated");
+    } = useScheduleStatusPanelViewModel();
 
-      // Recompute current/next
-      refreshStatus();
-    } catch (err) {
-      console.error("Failed to stop stream:", err);
-    } finally {
-      setIsStopping(false);
-    }
-  };
+    const title = titleFromVariant(variant);
+    const isLive = variant === "live" || variant === "ending";
+    const normalizedReason = normalizeReason(reasonLabel);
 
-  return (
-    <div className="bg-gray-800 rounded p-4 border border-gray-700 mt-6 text-gray-100">
-      <h2 className="text-lg font-semibold mb-2">🕒 Live Schedule Monitor</h2>
+    return (
+        <div className="bg-gray-800 rounded p-4 border border-gray-700 mt-6 text-gray-100">
+            <h2 className="text-lg font-semibold mb-2">🕒 Live Schedule Monitor</h2>
 
-      <div className="flex flex-col gap-2 text-sm">
+            <div className="flex flex-col gap-2 text-sm">
+                {/* HEADER STATUS (standardizat) */}
+                <div className="font-semibold text-gray-200">{title}</div>
 
-        {/* CURRENT LIVE */}
-        {current ? (
-          <>
-            <div className="text-green-400 font-semibold flex items-center justify-between">
+                {/* 1) LIVE: nume item + timp până la final */}
+                {isLive && activeItemName ? (
+                    <>
+                        <div className="text-green-400 font-semibold flex items-center justify-between">
               <span>
-                LIVE NOW: {current.name} ({current.platform})
+                {activeItemName}
+                  {activeItemPlatform ? ` (${activeItemPlatform})` : ""}
               </span>
 
-              <button
-                onClick={stopCurrentLive}
-                disabled={isStopping}
-                className={`ml-3 px-3 py-1 rounded text-white ${
-                  isStopping
-                    ? "bg-gray-600 cursor-wait"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
-              >
-                {isStopping ? "Stopping..." : "⏹ Stop Live"}
-              </button>
-            </div>
+                            <button
+                                onClick={() => void stopCurrentLive()}
+                                disabled={isStopping}
+                                className={`ml-3 px-3 py-1 rounded text-white ${
+                                    isStopping ? "bg-gray-600 cursor-wait" : "bg-red-600 hover:bg-red-700"
+                                }`}
+                            >
+                                {isStopping ? "Stopping..." : "⏹ Stop Live"}
+                            </button>
+                        </div>
 
-            <div className="text-gray-300">
-              Ends in: <span className="font-mono">{timeToEnd}</span>
-            </div>
-          </>
-        ) : (
-          <div className="text-yellow-400 font-semibold">
-            No live streams right now
-          </div>
-        )}
+                        <div className="text-gray-300">
+                            Ends in: <span className="font-mono">{timeToEnd}</span>
+                        </div>
+                    </>
+                ) : null}
 
-        {/* NEXT ITEM */}
-        {next && (
-          <div className="mt-2">
-            <div className="text-gray-300">
-              Next: <span className="text-blue-400">{next.name}</span>
-            </div>
+                {/* ended: reasonLabel */}
+                {variant === "ended" ? (
+                    <div className="text-gray-300">{normalizedReason ? normalizedReason : "Ended"}</div>
+                ) : null}
 
-            <div className="text-gray-400">
-              Starts in: <span className="font-mono">{timeToNext}</span>
+
+                {/* 2) NEXT: următorul item + timp până la start */}
+                {nextName ? (
+                    <div className="mt-2">
+                        <div className="text-gray-300">
+                            Next: <span className="text-blue-400">{nextName}</span>
+                        </div>
+                        <div className="text-gray-400">
+                            Starts in: <span className="font-mono">{timeToNext}</span>
+                        </div>
+                    </div>
+                ) : null}
+                <AutoStopPanel />
+
+
+                {/* label din VM păstrat ca fallback informativ (nu calculăm nimic) */}
+                {variant === "error" && label ? <div className="text-gray-400">{label}</div> : null}
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+        </div>
+    );
 }

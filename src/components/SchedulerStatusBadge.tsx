@@ -1,31 +1,36 @@
-import { useScheduleStatus } from "../hooks/useScheduleStatus";
+// filepath: src/components/SchedulerStatusBadge.tsx
+type StreamVariant = "idle" | "live" | "ending" | "ended" | "error";
 
-export default function SchedulerStatusBadge() {
+type Props = {
+    label: string;
+    variant: StreamVariant;
+    reasonLabel?: string;
+};
 
-  // Get live/next/time statuses
-  const { current, next, timeToNext, timeToEnd } = useScheduleStatus();
+function getBadgeText(label: string, variant: StreamVariant, reasonLabel?: string) {
+    if (variant === "live") return "LIVE NOW";
+    if (variant === "ending") return "Ending…";
+    if (variant === "ended") return reasonLabel ? `Ended — ${reasonLabel}` : "Ended";
+    if (variant === "error") return label || "Error";
+    return "Idle";
+}
 
-  let statusText = "Idle";
-  let statusColor = "bg-gray-600";
+function getDotClass(variant: StreamVariant) {
+    if (variant === "live") return "bg-green-600";
+    if (variant === "ending") return "bg-yellow-500";
+    if (variant === "ended") return "bg-gray-500";
+    if (variant === "error") return "bg-red-600";
+    return "bg-gray-600";
+}
 
-  if (current) {
-    statusText = `LIVE: ${current.name}`;
-    statusColor = "bg-green-600";
-  } else if (next) {
-    statusText = `Waiting: ${next.name} in ${timeToNext}`;
-    statusColor = "bg-yellow-500";
-  }
+export default function SchedulerStatusBadge({ label, variant, reasonLabel }: Props) {
+    const text = getBadgeText(label, variant, reasonLabel);
+    const dot = getDotClass(variant);
 
-  return (
-    <div className="flex items-center gap-2 ml-2">
-      <span className={`inline-block w-3 h-3 rounded-full shadow-md ${statusColor}`}></span>
-      <span className="text-sm font-medium text-gray-200">{statusText}</span>
-
-      {current && (
-        <span className="text-xs text-gray-400 ml-2">
-          (Ends in {timeToEnd})
-        </span>
-      )}
-    </div>
-  );
+    return (
+        <div className="flex items-center gap-2 ml-2">
+            <span className={`inline-block w-3 h-3 rounded-full shadow-md ${dot}`} />
+            <span className="text-sm font-medium text-gray-200">{text}</span>
+        </div>
+    );
 }

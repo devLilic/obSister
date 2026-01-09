@@ -1,8 +1,9 @@
-// electron/main/config/logger.ts
+// filepath: electron/main/config/logger.ts
 import log from "electron-log";
 import path from "path";
 import fs from "fs";
 import { app, BrowserWindow } from "electron";
+import type { AppActionType } from "../../types/types";
 
 // Ensure log directory exists
 const logDir = path.join(app.getPath("userData"), "logs");
@@ -28,32 +29,38 @@ export function attachLogWindow(win: BrowserWindow) {
  */
 function broadcastLog(level: string, message: string) {
   if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send("log-message", { level, message, timestamp: new Date().toISOString() });
+    mainWindow.webContents.send("log-message", {
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 
-/**
- * INFO logger
- */
 export function logInfo(message: string) {
   log.info(message);
   broadcastLog("info", message);
 }
 
-/**
- * WARNING logger
- */
 export function logWarn(message: string) {
   log.warn(message);
   broadcastLog("warn", message);
 }
 
-/**
- * ERROR logger
- */
 export function logError(message: string) {
   log.error(message);
   broadcastLog("error", message);
+}
+
+/**
+ * ACTION logger (required): logs action type + optional payload.
+ */
+export function logAction(type: AppActionType, payload?: Record<string, any>) {
+  const msg =
+      payload && Object.keys(payload).length > 0
+          ? `🧾 ACTION:${type} ${JSON.stringify(payload)}`
+          : `🧾 ACTION:${type}`;
+  logInfo(msg);
 }
 
 export default log;

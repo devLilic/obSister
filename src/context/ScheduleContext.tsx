@@ -1,6 +1,9 @@
+// File: src/context/ScheduleContext.tsx
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { ScheduleItem, ScheduleItemStatus } from "../../electron/types/types";
 import { v4 as uuidv4 } from "uuid";
+import { getSchedule, saveSchedule, setScheduleItemStatus } from "../services/scheduleService";
+import { syncGoogleSchedule } from "../services/googleService";
 
 interface ScheduleContextState {
   items: ScheduleItem[];
@@ -30,7 +33,7 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
   const loadSchedule = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await window.api.schedule.get();
+      const data = await getSchedule();
       setItems(data);
       setError(null);
     } catch (err: any) {
@@ -61,23 +64,21 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
       status: "upcoming",
     };
 
-    setItems(prev => [...prev, newItem]);
+    setItems((prev) => [...prev, newItem]);
   };
 
   // ----------------------------------------
   // UPDATE ITEM
   // ----------------------------------------
   const updateItem = (id: string, field: keyof ScheduleItem, value: any) => {
-    setItems(prev =>
-      prev.map(i => (i.id === id ? { ...i, [field]: value } : i))
-    );
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
   };
 
   // ----------------------------------------
   // REMOVE ITEM
   // ----------------------------------------
   const removeItem = (id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id));
+    setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
   // ----------------------------------------
@@ -85,8 +86,9 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
   // ----------------------------------------
   const saveAll = async () => {
     try {
-      await window.api.schedule.save(items);
+      await saveSchedule(items);
       await loadSchedule();
+      // ✅ Behavior unchanged
       alert("Schedule saved!");
     } catch (e: any) {
       setError(e.message);
@@ -98,7 +100,8 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
   // ----------------------------------------
   const syncSchedule = async () => {
     try {
-      const result = await window.api.google.syncSchedule();
+      const result = await syncGoogleSchedule();
+      // ✅ Behavior unchanged
       console.log("SYNC RESULT:", result);
 
       await loadSchedule(); // reload instantly
@@ -112,31 +115,29 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
   // ----------------------------------------
   const setItemStatus = async (id: string, status: ScheduleItemStatus) => {
     try {
-      await window.api.schedule.setStatus(id, status);
-      setItems(prev =>
-        prev.map(i => (i.id === id ? { ...i, status } : i))
-      );
+      await setScheduleItemStatus(id, status);
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
     } catch (e: any) {
       setError(e.message);
     }
   };
 
   return (
-    <ScheduleContext.Provider
-      value={{
-        items,
-        loading,
-        error,
-        addItem,
-        updateItem,
-        removeItem,
-        saveAll,
-        syncSchedule,
-        setItemStatus,
-      }}
-    >
-      {children}
-    </ScheduleContext.Provider>
+      <ScheduleContext.Provider
+          value={{
+            items,
+            loading,
+            error,
+            addItem,
+            updateItem,
+            removeItem,
+            saveAll,
+            syncSchedule,
+            setItemStatus,
+          }}
+      >
+        {children}
+      </ScheduleContext.Provider>
   );
 };
 

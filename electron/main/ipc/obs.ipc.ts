@@ -1,4 +1,4 @@
-// electron/main/ipc/obs.ipc.ts
+// filepath: electron/main/ipc/obs.ipc.ts
 import { ipcMain } from "electron";
 import {
   getProfileList,
@@ -16,7 +16,6 @@ import { logInfo } from "../config/logger";
 export function registerOBSHandlers() {
   logInfo("🧩 Registering OBS IPC handlers...");
 
-  // --- Profile Management ---
   ipcMain.handle("obs:getProfiles", async () => {
     return await getProfileList();
   });
@@ -25,21 +24,22 @@ export function registerOBSHandlers() {
     return await setCurrentProfile(profileName);
   });
 
-  // --- Stream Controls ---
   ipcMain.on("start-stream", async (_e, key: string) => {
     await startStream(key);
   });
 
   ipcMain.on("stop-stream", async () => {
-    await stopStream();
+    // manual stop from UI/operator
+    await stopStream("manual");
   });
 
-  // --- Smart Stream (auto profile switch) ---
-  ipcMain.handle("obs:startSmartStream", async (_event, { key, mode }: { key: string; mode: "single" | "multi" }) => {
-    return await startSmartStream(key, mode);
-  });
+  ipcMain.handle(
+      "obs:startSmartStream",
+      async (_event, { key, mode }: { key: string; mode: "single" | "multi" }) => {
+        return await startSmartStream(key, mode);
+      }
+  );
 
-  // --- Utility / Debug ---
   ipcMain.handle("obs:ensureProfile", async (_event, required: string) => {
     return await ensureProfile(required);
   });

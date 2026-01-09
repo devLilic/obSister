@@ -1,10 +1,11 @@
-// electron/main/schedule/store.ts
+// filepath: electron/main/schedule/store.ts
 import fs from "fs";
 import path from "path";
 import { app } from "electron";
 import { logInfo, logError } from "../config/logger";
-import { ScheduleItem } from "../../types/types";
+import { ScheduleItem, ScheduleItemStatus, ScheduleSkipReason } from "../../types/types";
 import { calculateScheduleItemStatus } from "./status";
+import { applyStopFrameFiltersToSchedule } from "../stopFrame/filtersStore";
 
 const schedulePath = path.join(app.getPath("userData"), "schedule.json");
 
@@ -18,8 +19,9 @@ function normalizeItem(raw: any): ScheduleItem {
     durationMinutes: raw.durationMinutes,
     fbKey: raw.fbKey,
     autoStart: raw.autoStart,
-    // dacă nu are status (fișier vechi) îl calculăm
     status: raw.status,
+    skipReason: raw.skipReason as ScheduleSkipReason | undefined,
+    stopFramePath: raw.stopFramePath,
   };
 
   return {
@@ -41,12 +43,45 @@ export function loadSchedule(): ScheduleItem[] {
   }
 }
 
+/**
+ * PHASE 4A:
+ * Apply StopFrame filters BEFORE saving schedule.json.
+ * This ensures scheduler can use schedule.json directly (no runtime refilter).
+ */
 export function saveSchedule(list: ScheduleItem[]) {
   try {
-    const normalized = list.map(normalizeItem);
+    // Apply filters before normalization/persist
+    const applied = applyStopFrameFiltersToSchedule(list).items;
+
+    const normalized = applied.map(normalizeItem);
     fs.writeFileSync(schedulePath, JSON.stringify(normalized, null, 2));
     logInfo("🗓️ Schedule saved locally.");
   } catch (e: any) {
     logError("Failed to save schedule: " + e.message);
+  }
+}
+
+/**
+ * Minimal helper to mark an item status (e.g., terminated / skipped).
+ */
+export function setScheduleItemStatus(id: string, status: ScheduleItemStatus) {
+  try {
+    const list = loadSchedule();
+    const updated = list.map((item) => (item.id === id ? { ...item, status } : item));
+    saveSchedule(updated);
+  } catch (e: any) {
+    logError(`Failed to set schedule item status: ${e?.message ?? String(e)}`);
+  }
+}
+
+export function markScheduleItemSkipped(id: string, reason: ScheduleSkipReason) {
+  try {
+    const list = loadSchedule();
+    const updated = list.map((item) =>
+        item.id === id ? { ...item, status: "skipped" as const, skipReason: reason } : item
+    );
+    saveSchedule(updated);
+  } catch (e: any) {
+    logError(`Failed to mark item skipped: ${e?.message ?? String(e)}`);
   }
 }

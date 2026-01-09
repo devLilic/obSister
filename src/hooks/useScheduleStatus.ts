@@ -1,12 +1,12 @@
+// File: src/hooks/useScheduleStatus.ts
 import { useEffect, useState, useCallback } from "react";
 import { useSchedule } from "../context/ScheduleContext";
 import { ScheduleItem } from "../../electron/types/types";
 
 interface ScheduleStatus {
-  current: ScheduleItem | null;
   next: ScheduleItem | null;
   timeToNext: string;
-  timeToEnd: string;
+  timeToEnd: string; // helper vizual (nu decide LIVE)
   refreshStatus: () => void;
 }
 
@@ -22,60 +22,27 @@ function formatDuration(ms: number): string {
 export function useScheduleStatus(): ScheduleStatus {
   const { items } = useSchedule();
 
-  const [current, setCurrent] = useState<ScheduleItem | null>(null);
   const [next, setNext] = useState<ScheduleItem | null>(null);
   const [timeToNext, setTimeToNext] = useState("—");
   const [timeToEnd, setTimeToEnd] = useState("—");
 
-  // ------------------------------
-  // FIND CURRENT
-  // ------------------------------
-  const findCurrent = useCallback((): ScheduleItem | null => {
-  const now = Date.now();
-
-  return (
-    items.find(item => {
-      if (item.status === "terminated") return false;   // 👈 exclude TERMINATED
-      const start = new Date(item.startTime).getTime();
-      const end = start + item.durationMinutes * 60000;
-      return now >= start && now < end;
-    }) || null
-  );
-}, [items]);
-
-  // ------------------------------
-  // FIND NEXT
-  // ------------------------------
+  // FIND NEXT (exclude terminated)
   const findNext = useCallback((): ScheduleItem | null => {
-  const now = Date.now();
+    const now = Date.now();
 
-  return (
-    items
-      .filter(item => item.status !== "terminated")      // 👈 exclude TERMINATED
-      .filter(item => new Date(item.startTime).getTime() > now)
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0] || null
-  );
-}, [items]);
+    return (
+        items
+            .filter((item) => item.status !== "terminated")
+            .filter((item) => new Date(item.startTime).getTime() > now)
+            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0] || null
+    );
+  }, [items]);
 
-  // ------------------------------
-  // UPDATE STATUS (current & next)
-  // ------------------------------
   const updateStatus = useCallback(() => {
     const now = new Date();
 
-    const cur = findCurrent();
     const nxt = findNext();
-
-    setCurrent(cur);
     setNext(nxt);
-
-    // time to end (only for current)
-    if (cur) {
-      const end = new Date(new Date(cur.startTime).getTime() + cur.durationMinutes * 60000);
-      setTimeToEnd(formatDuration(end.getTime() - now.getTime()));
-    } else {
-      setTimeToEnd("—");
-    }
 
     // time to next
     if (nxt) {
@@ -84,16 +51,19 @@ export function useScheduleStatus(): ScheduleStatus {
     } else {
       setTimeToNext("—");
     }
-  }, [findCurrent, findNext]);
+
+    // timeToEnd rămâne helper vizual general (nu decide LIVE)
+    // (în UI îl afișăm doar când Electron spune LIVE)
+    setTimeToEnd((prev) => prev ?? "—");
+  }, [findNext]);
 
   const refreshStatus = useCallback(() => updateStatus(), [updateStatus]);
 
-  // Auto-refresh every second
   useEffect(() => {
     updateStatus();
     const interval = setInterval(updateStatus, 1000);
     return () => clearInterval(interval);
   }, [updateStatus]);
 
-  return { current, next, timeToNext, timeToEnd, refreshStatus };
+  return { next, timeToNext, timeToEnd, refreshStatus };
 }

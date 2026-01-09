@@ -85,6 +85,7 @@ app.whenReady().then(async () => {
   registerIpcHandlers();
   setupOBSListeners();
 
+
   win.webContents.on("did-finish-load", async () => {
     await startOBSConnectionLoop();
     win.webContents.send("obs-status", getOBSStatus());

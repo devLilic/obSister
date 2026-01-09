@@ -1,20 +1,28 @@
-// electron/main/scheduler/streamScheduler.ts
+// filepath: electron/main/scheduler/streamScheduler.ts
 import fs from "fs";
 import path from "path";
 import { app, BrowserWindow } from "electron";
 import { getMainWindow, obs } from "../obs/connection";
 import { ensureProfile } from "../obs/profile";
 import { startStream as startFacebookStream, stopStream as stopObsStream } from "../obs/controller";
-import { logInfo, logWarn, logError } from "../config/logger";
+import { logInfo, logWarn, logError, logAction } from "../config/logger";
 import { ScheduleItem } from "../../types/types";
+import { markScheduleItemSkipped } from "../schedule/store";
+import {
+  setActiveScheduleItemId,
+  getStreamEndReason,
+  getActiveScheduleItemId,
+  getStreamState,
+  setStreamState,
+  markLive,
+} from "../stream/streamTruth";
 
 type Platform = ScheduleItem["platform"];
 
-let failureCount = 0;          // consecutive failures counter
-const MAX_FAILURES = 5;        // stop auto attempts after this
+let failureCount = 0;
+const MAX_FAILURES = 5;
 let pausedDueToFailures = false;
-const warnedNoKey = new Set<string>(); // store item.id values
-
+const warnedNoKey = new Set<string>();
 
 /** Where we store the user’s schedule */
 const schedulePath = path.join(app.getPath("userData"), "schedule.json");
@@ -22,8 +30,8 @@ const schedulePath = path.join(app.getPath("userData"), "schedule.json");
 /** Profiles to use per platform (tweak these names to match your OBS) */
 const PROFILE_FOR: Record<Platform, string> = {
   facebook: "SingleStream",
-  youtube:  "SingleStream",   // YouTube-only (service configured inside OBS)
-  multi:    "MultiStream",    // Multi-RTMP profile with plugin set to sync
+  youtube: "SingleStream",
+  multi: "MultiStream",
 };
 
 function loadSchedule(): ScheduleItem[] {
@@ -40,7 +48,7 @@ function loadSchedule(): ScheduleItem[] {
 async function safeCall<T>(fn: () => Promise<T>, context: string): Promise<T | null> {
   try {
     const result = await fn();
-    failureCount = 0; // ✅ success → reset
+    failureCount = 0;
     return result;
   } catch (err: any) {
     failureCount++;
@@ -48,7 +56,6 @@ async function safeCall<T>(fn: () => Promise<T>, context: string): Promise<T | n
     if (failureCount >= MAX_FAILURES) {
       pausedDueToFailures = true;
       logError(`⚠️ Scheduler paused after ${failureCount} consecutive failures.`);
-      // optionally, notify the renderer/UI
       const win = getMainWindow();
       win?.webContents.send("scheduler-paused", {
         reason: "too many errors",
@@ -59,9 +66,12 @@ async function safeCall<T>(fn: () => Promise<T>, context: string): Promise<T | n
   }
 }
 
-
-function iso(s: string) { return new Date(s); }
-function addMinutes(d: Date, m: number) { return new Date(d.getTime() + m * 60000); }
+function iso(s: string) {
+  return new Date(s);
+}
+function addMinutes(d: Date, m: number) {
+  return new Date(d.getTime() + m * 60000);
+}
 
 let tickTimer: NodeJS.Timeout | null = null;
 
@@ -71,8 +81,27 @@ const state = {
   isStreaming: false,
 };
 
+function resetSchedulerLocalState(reason: string) {
+  state.activeId = null;
+  state.isStreaming = false;
+  setActiveScheduleItemId(null);
+
+  // normalize ended -> idle when nothing active
+  if (getStreamState() === "ended") {
+    setStreamState("idle");
+  }
+
+  logInfo(`🧩 Scheduler: local state reset (${reason})`);
+}
+
 async function startForItem(item: ScheduleItem) {
   try {
+    // If this exact item previously ended due to OBS crash, do not attempt restart.
+    if (getStreamEndReason() === "obs_crash" && getActiveScheduleItemId() === item.id) {
+      logWarn(`⛔ Scheduler: blocked restart for "${item.name}" due to previous OBS crash.`);
+      return;
+    }
+
     const profile = PROFILE_FOR[item.platform];
     const ok = await ensureProfile(profile);
     if (!ok) {
@@ -87,12 +116,15 @@ async function startForItem(item: ScheduleItem) {
       }
       await startFacebookStream(item.fbKey);
     } else {
-      // YouTube-only: do NOT overwrite service settings; just start output
       await obs.call("StartStream");
     }
 
     state.activeId = item.id;
     state.isStreaming = true;
+
+    setActiveScheduleItemId(item.id);
+    markLive();
+
     logInfo(`▶️ Scheduler started stream: ${item.name} (${item.platform})`);
   } catch (e: any) {
     logError(`Scheduler start failed for "${item.name}": ${e.message}`);
@@ -101,19 +133,18 @@ async function startForItem(item: ScheduleItem) {
 
 async function stopIfStreaming(reason: string) {
   try {
-    await stopObsStream();
+    // Scheduler stop is tagged as duration (as per spec)
+    await stopObsStream("duration");
   } catch (e: any) {
     logWarn(`Scheduler stop warning: ${e.message}`);
   } finally {
     logInfo(`⏹ Scheduler stopped stream (${reason})`);
-    state.activeId = null;
-    state.isStreaming = false;
+    resetSchedulerLocalState("stopIfStreaming");
   }
 }
 
 /** core clock: checks schedule every 5 seconds */
 async function tick(_win?: BrowserWindow) {
-  // ⛔ pause if too many failures
   if (pausedDueToFailures) {
     logWarn("⏸ Scheduler paused due to repeated errors.");
     return;
@@ -129,7 +160,10 @@ async function tick(_win?: BrowserWindow) {
     const end = addMinutes(start, item.durationMinutes);
     const auto = item.autoStart !== false;
 
+    // PHASE 3: skip terminated/skipped items
+    if (item.status === "terminated" || item.status === "skipped") continue;
     if (!auto) continue;
+
     if (now >= start && now < end) {
       current = item;
       break;
@@ -139,7 +173,16 @@ async function tick(_win?: BrowserWindow) {
   // ✅ No current item
   if (!current) {
     if (state.isStreaming) {
-      await safeCall(() => stopIfStreaming("no scheduled item active"), "stop unscheduled");
+      const rt = getStreamState();
+      if (rt === "live" || rt === "ending") {
+        await safeCall(() => stopIfStreaming("no scheduled item active"), "stop unscheduled");
+      } else {
+        resetSchedulerLocalState("already ended (skip duplicate stop)");
+      }
+    } else {
+      if (getStreamState() === "ended") {
+        setStreamState("idle");
+      }
     }
     return;
   }
@@ -150,30 +193,48 @@ async function tick(_win?: BrowserWindow) {
       logWarn(`Scheduler: "${current.name}" needs a Facebook key but none provided`);
       warnedNoKey.add(current.id);
     }
-    // ensure we are not streaming wrong/empty key
     if (state.isStreaming && state.activeId === current.id) {
-      await safeCall(() => stopIfStreaming("missing FB key"), "stop missing key");
+      const rt = getStreamState();
+      if (rt === "live" || rt === "ending") {
+        await safeCall(() => stopIfStreaming("missing FB key"), "stop missing key");
+      } else {
+        resetSchedulerLocalState("already ended (missing key branch)");
+      }
     }
-    return; // skip trying to start
+    return;
   }
 
-  // ✅ Now, handle start/stop normally
+  // ✅ Guard “No double start”
+  // Before auto-start, if runtime truth is already live/ending -> do NOT start.
   if (!state.isStreaming || state.activeId !== current.id) {
-    await safeCall(() => startForItem(current), `start ${current.name}`);
-  } else {
-    const end = addMinutes(iso(current.startTime), current.durationMinutes);
-    if (now >= end) {
-      await safeCall(() => stopIfStreaming("duration elapsed"), "stop after duration");
+    const rt = getStreamState();
+    if (rt === "live" || rt === "ending") {
+      logAction("auto_start_blocked_already_live", {
+        itemId: current.id,
+        itemName: current.name,
+        streamState: rt,
+        skipReason: "already_live_manual",
+      });
+
+      // Mark this schedule item skipped for this run window (persisted).
+      markScheduleItemSkipped(current.id, "already_live_manual");
+      return; // scheduler continues on next ticks with next items
     }
+
+    await safeCall(() => startForItem(current as ScheduleItem), `start ${current.name}`);
+    return;
+  }
+
+  // ✅ Already streaming same item — check if duration elapsed
+  const end = addMinutes(iso(current.startTime), current.durationMinutes);
+  if (now >= end) {
+    await safeCall(() => stopIfStreaming("duration elapsed"), "stop after duration");
   }
 }
-
-
 
 export function startStreamScheduler(win?: BrowserWindow) {
   if (tickTimer) return; // already running
   logInfo("🗓️ Scheduler: started");
-  // initial slight delay to avoid racing just after app startup
   setTimeout(() => tick(win), 1500);
   tickTimer = setInterval(() => tick(win), 5000);
 }

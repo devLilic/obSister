@@ -1,6 +1,9 @@
+// filepath: electron/main/obs/controller.ts
 import { obs } from "./connection";
 import { logInfo, logError } from "../config/logger";
 import { ensureProfile } from "./profile";
+import type { StreamEndReason } from "../../types/types";
+import { markStopInitiated, markEnded } from "../stream/streamTruth";
 
 /**
  * Start a normal RTMP stream (usually Facebook)
@@ -10,9 +13,12 @@ export async function startStream(streamKey: string) {
     await obs.call("SetStreamServiceSettings", {
       streamServiceType: "rtmp_custom",
       streamServiceSettings: {
-        service: "Facebook Live",
-        server: "rtmps://live-api-s.facebook.com:443/rtmp/",
+        service: "Custom Live",
+        server: "rtmp://localhost/live",
         key: streamKey,
+        // service: "Facebook Live",
+        // server: "rtmps://live-api-s.facebook.com:443/rtmp/",
+        // key: streamKey,
       },
     });
     await obs.call("StartStream");
@@ -23,13 +29,19 @@ export async function startStream(streamKey: string) {
 }
 
 /**
- * Stop stream
+ * Stop stream (tag reason only; flow unchanged)
  */
-export async function stopStream() {
+export async function stopStream(reason: StreamEndReason = "manual") {
   try {
+    // Phase 1/5A: tag stop initiation
+    markStopInitiated(reason);
+
     await obs.call("StopStream");
+
+    // we mark ended optimistically; OBS events may also update state
+    markEnded(reason);
+
     logInfo("⏹ Stream stopped successfully");
-    
   } catch (error: any) {
     logError(`Failed to stop stream: ${error.message}`);
   }

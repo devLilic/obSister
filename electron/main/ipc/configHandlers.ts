@@ -1,3 +1,4 @@
+// electron/main/ipc/configHandlers.ts
 import { ipcMain } from "electron";
 import { loadConfig, saveConfig } from "../config/config";
 import { logInfo, logError } from "../config/logger";

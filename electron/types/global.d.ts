@@ -1,67 +1,40 @@
-import { OBSConfig } from "./types";
+// filepath: electron/types/global.d.ts
+import {
+  OBSConfig,
+  AutoStopConfig,
+  AutoStopStatus,
+  StreamContext,
+  ScheduleItem,
+  ScheduleItemStatus,
+  StopFrameFilter,
+  StopFrameFilterCreatePayload,
+  StopFrameFilterPatch,
+  StopFrameNotification,
+  AutoStopRuntimeEvent,
+} from "./types";
 
 export {};
 
 declare global {
   interface Window {
     api: {
-      // -----------------------------
-      // ✅ OBS STATUS
-      // -----------------------------
-      /**
-       * Listen for OBS connection status changes.
-       */
       onOBSStatus: (callback: (connected: boolean) => void) => void;
 
-      // -----------------------------
-      // ✅ OBS PROFILES
-      // -----------------------------
       obsProfiles: {
-        /**
-         * Get all profiles and the currently active one.
-         * @returns {Promise<{ currentProfileName: string; profiles: string[] }>}
-         */
         getAll: () => Promise<{ currentProfileName: string; profiles: string[] }>;
-
-        /**
-         * Set (switch to) a specific OBS profile.
-         */
         set: (name: string) => Promise<boolean>;
       };
 
-      // -----------------------------
-      // ✅ STREAM CONTROL
-      // -----------------------------
       stream: {
-        /**
-         * Start a simple Facebook stream.
-         */
         start: (key: string) => void;
-
-        /**
-         * Stop the current stream.
-         */
         stop: () => void;
-
-        /**
-         * Start a stream and ensure the correct profile before streaming.
-         * @param key The RTMP key (Facebook Live key)
-         * @param mode "single" for FB only, "multi" for FB + YT
-         */
         startSmart: (key: string, mode: "single" | "multi") => Promise<void>;
+        getContext: () => Promise<StreamContext>;
+        onContext: (callback: (ctx: StreamContext) => void) => () => void;
       };
 
-      // -----------------------------
-      // ✅ OBS PROFILE CHANGE EVENTS
-      // -----------------------------
-      /**
-       * Listen for profile changes in OBS (manual or automatic).
-       */
       onProfileChanged: (callback: (profileName: string) => void) => void;
 
-      // -----------------------------
-      // ✅ SCHEDULE MANAGEMENT
-      // -----------------------------
       schedule: {
         get: () => Promise<ScheduleItem[]>;
         save: (items: ScheduleItem[]) => Promise<boolean>;
@@ -74,23 +47,44 @@ declare global {
       };
 
       logs: {
-        load: () => Promise<{ timestamp: string; level: "info" | "warn" | "error"; message: string }[]>;
+        load: () => Promise<
+            { timestamp: string; level: "info" | "warn" | "error"; message: string }[]
+        >;
         clear: () => Promise<{ success: boolean; error?: string }>;
       };
 
       google: {
         syncSchedule: () => Promise<{ success: boolean; message: string }>;
         testConnection: (
-          sheetId: string,
-          keyPath: string,
-          tabName: string
-        ) => Promise<{ success: boolean; message: string }>;  
-        
+            sheetId: string,
+            keyPath: string,
+            tabName: string
+        ) => Promise<{ success: boolean; message: string }>;
       };
 
-      // -----------------------------
-      // ⚙️ GENERIC IPC HELPERS
-      // -----------------------------
+      autoStop: {
+        start: () => Promise<void>;
+        stop: () => Promise<void>;
+        setConfig: (config: AutoStopConfig) => Promise<void>;
+        getStatus: () => Promise<AutoStopStatus>;
+        selectReferenceImage: () => Promise<string | null>;
+
+        // ✅ runtime events (read-only)
+        onRuntimeEvent: (callback: (evt: AutoStopRuntimeEvent) => void) => () => void;
+      };
+
+      stopFrames: {
+        listFilters: () => Promise<StopFrameFilter[]>;
+        createFilter: (payload: StopFrameFilterCreatePayload) => Promise<StopFrameFilter[]>;
+        updateFilter: (id: string, patch: StopFrameFilterPatch) => Promise<StopFrameFilter[]>;
+        deleteFilter: (id: string) => Promise<StopFrameFilter[]>;
+        onChanged: (callback: (filters: StopFrameFilter[]) => void) => () => void;
+        onNotification: (callback: (n: StopFrameNotification) => void) => () => void;
+
+        openPreview: (absolutePath: string) => Promise<string | null>;
+        selectImage: () => Promise<string | null>;
+      };
+
       on: (channel: string, listener: (...args: any[]) => void) => void;
       off: (channel: string, listener: (...args: any[]) => void) => void;
       send: (channel: string, ...args: any[]) => void;
