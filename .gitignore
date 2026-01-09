@@ -28,3 +28,4 @@ google.json
 .env
 dist-electron
 release
+assets
