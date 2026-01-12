@@ -7,6 +7,7 @@ export type AutoStopScanVariant = "info" | "success" | "warning" | "error";
 
 export type AutoStopRuntimeState = {
     isScanning: boolean;
+    isEnabled: boolean; // ✅ Added
     lastAutoStopEvent: AutoStopRuntimeEvent | null;
 
     /**
@@ -26,6 +27,7 @@ export type AutoStopRuntimeState = {
      */
     activeItemId: string | null;
     hasStopFrame: boolean;
+    stopFramePath: string | null; // ✅ Added
 
     /**
      * Stream-end reason from Electron stream context (may be "autostop")
@@ -66,6 +68,8 @@ export function AutoStopRuntimeProvider({ children }: { children: React.ReactNod
     const { ctx } = useStreamRuntime();
 
     const [isScanning, setIsScanning] = useState(false);
+    const [isEnabled, setIsEnabled] = useState(false); // ✅ Added
+    const [stopFramePath, setStopFramePath] = useState<string | null>(null); // ✅ Added
     const [lastAutoStopEvent, setLastAutoStopEvent] = useState<AutoStopRuntimeEvent | null>(null);
     const [lastStopReason, setLastStopReason] =
         useState<AutoStopRuntimeState["lastStopReason"]>(null);
@@ -76,21 +80,39 @@ export function AutoStopRuntimeProvider({ children }: { children: React.ReactNod
     useEffect(() => {
         mountedRef.current = true;
 
+        // Load initial status (safety)
+        window.api.autoStop.getStatus().then((status) => {
+            if (!mountedRef.current) return;
+            setIsEnabled(status.enabled);
+            setIsScanning(status.running);
+            if (status.running && status.stopFramePath) {
+                setStopFramePath(status.stopFramePath);
+            }
+        });
+
         // NOTE: Electron engineer specified this API:
         // window.api.autoStop.onRuntimeEvent((evt) => ...) => unsubscribe()
         const unsubscribe = window.api.autoStop.onRuntimeEvent((evt: AutoStopRuntimeEvent) => {
             if (!mountedRef.current) return;
 
             setLastAutoStopEvent(evt);
-
+            
             if (evt.type === "scan_started") {
                 setIsScanning(true);
                 setLastStopReason(null);
+                if (evt.stopFramePath) {
+                    setStopFramePath(evt.stopFramePath);
+                }
             }
 
             if (evt.type === "scan_stopped") {
                 setIsScanning(false);
                 setLastStopReason(evt.reason);
+                setStopFramePath(null);
+            }
+
+            if (evt.type === "enabled_changed") {
+                setIsEnabled(evt.enabled);
             }
 
             if (evt.type === "stopframe_detected") {
@@ -127,15 +149,17 @@ export function AutoStopRuntimeProvider({ children }: { children: React.ReactNod
     const value = useMemo<AutoStopRuntimeState>(
         () => ({
             isScanning,
+            isEnabled, // ✅ Added
             lastAutoStopEvent,
             lastStopReason,
             autoStopScanStatusLabel: label,
             autoStopScanVariant: variant,
             activeItemId,
             hasStopFrame,
+            stopFramePath, // ✅ Added
             streamEndReason,
         }),
-        [isScanning, lastAutoStopEvent, lastStopReason, label, variant, activeItemId, hasStopFrame, streamEndReason]
+        [isScanning, isEnabled, stopFramePath, lastAutoStopEvent, lastStopReason, label, variant, activeItemId, hasStopFrame, streamEndReason]
     );
 
     return <AutoStopRuntimeContext.Provider value={value}>{children}</AutoStopRuntimeContext.Provider>;

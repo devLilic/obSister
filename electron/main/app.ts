@@ -16,6 +16,7 @@ import { startStreamScheduler, stopStreamScheduler } from "./scheduler/streamSch
 import { registerConfigIpc } from "./ipc/configHandlers";
 import { registerLogsIpc } from "./ipc/logsHandlers";
 import { registerGoogleIpc } from "./ipc/googleHandlers";
+import { initAutoStopOrchestrator } from "./features/autoStop/autoStopOrchestrator";
 
 dotenv.config();
 
@@ -84,6 +85,7 @@ app.whenReady().then(async () => {
 
   registerIpcHandlers();
   setupOBSListeners();
+  initAutoStopOrchestrator();
 
 
   win.webContents.on("did-finish-load", async () => {

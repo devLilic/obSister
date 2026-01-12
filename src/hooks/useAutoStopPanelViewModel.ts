@@ -7,6 +7,8 @@ export type AutoStopPanelViewModel = {
     label: string;
     variant: "info" | "success" | "warning" | "error";
     isScanning: boolean;
+    isEnabled: boolean; // ✅ Added
+    stopFramePath: string | null; // ✅ Added
 
     // eligibility (passive, from stream context)
     isEligibleForActiveItem: boolean;
@@ -32,6 +34,8 @@ export function useAutoStopPanelViewModel(): AutoStopPanelViewModel {
             label: rt.autoStopScanStatusLabel,
             variant: rt.autoStopScanVariant,
             isScanning: rt.isScanning,
+            isEnabled: rt.isEnabled, // ✅ Added
+            stopFramePath: rt.stopFramePath, // ✅ Added
             isEligibleForActiveItem,
             eligibilityText,
             lastEventType,
@@ -40,6 +44,8 @@ export function useAutoStopPanelViewModel(): AutoStopPanelViewModel {
             rt.autoStopScanStatusLabel,
             rt.autoStopScanVariant,
             rt.isScanning,
+            rt.isEnabled, // ✅ Added
+            rt.stopFramePath, // ✅ Added
             isEligibleForActiveItem,
             eligibilityText,
             lastEventType,

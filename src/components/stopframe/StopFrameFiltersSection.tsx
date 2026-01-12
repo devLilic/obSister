@@ -139,7 +139,7 @@ export default function StopFrameFiltersSection() {
     }
 
     return (
-        <div className="bg-gray-900 text-gray-100 p-4 rounded border border-gray-700 w-full space-y-4">
+        <div className="bg-gray-900 text-gray-100 p-4 rounded border border-gray-700 w-full max-h-[500px] space-y-4">
             <div className="flex items-center justify-between gap-3">
                 <div>
                     <div className="text-gray-200 font-semibold">StopFrame Filtre</div>

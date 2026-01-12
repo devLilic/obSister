@@ -1,4 +1,6 @@
 // FILE: electron/main/features/autoStop/decisionEngine.ts
+import { logAction } from "../../config/logger";
+
 export class DecisionEngine {
     private hits: number[] = [];
     private cooldownUntil = 0;
@@ -17,7 +19,10 @@ export class DecisionEngine {
         if (distance <= this.maxDistance) {
             this.hits.push(now);
             this.hits = this.hits.filter(t => now - t <= this.windowSec * 1000);
-            console.log("🧠 hits count:", this.hits.length);
+            logAction("autostop_decision_engine_hit", { 
+                hitsCount: this.hits.length, 
+                requiredHits: this.requiredHits 
+            });
         }
 
         if (this.hits.length >= this.requiredHits) {

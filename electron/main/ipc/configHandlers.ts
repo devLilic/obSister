@@ -3,6 +3,7 @@ import { ipcMain } from "electron";
 import { loadConfig, saveConfig } from "../config/config";
 import { logInfo, logError } from "../config/logger";
 import { OBSConfig } from "../../types/types";
+import { getAutoStopService } from "../features/autoStop/autoStopService";
 
 export function registerConfigIpc() {
   // Get current config
@@ -12,6 +13,8 @@ export function registerConfigIpc() {
   ipcMain.handle("config:save", (_event, newData: OBSConfig) => {
     try {
       saveConfig(newData);
+      // Sync AutoStopService config if it exists
+      getAutoStopService().setConfig(newData.autoStop);
       logInfo("⚙️ Configuration saved");
       return { success: true };
     } catch (e: any) {

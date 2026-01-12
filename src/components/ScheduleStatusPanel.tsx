@@ -1,6 +1,5 @@
 // filepath: src/components/ScheduleStatusPanel.tsx
 import { useScheduleStatusPanelViewModel } from "../hooks/useScheduleStatusPanelViewModel";
-import AutoStopPanel from "./obs/AutoStopPanel.tsx";
 
 function normalizeReason(reasonLabel?: string) {
     if (!reasonLabel) return undefined;
@@ -41,7 +40,7 @@ export default function ScheduleStatusPanel() {
     const normalizedReason = normalizeReason(reasonLabel);
 
     return (
-        <div className="bg-gray-800 rounded p-4 border border-gray-700 mt-6 text-gray-100">
+        <div className="bg-gray-800 rounded-lg px-4 py-3 border border-gray-700 text-gray-100">
             <h2 className="text-lg font-semibold mb-2">🕒 Live Schedule Monitor</h2>
 
             <div className="flex flex-col gap-2 text-sm">
@@ -91,7 +90,6 @@ export default function ScheduleStatusPanel() {
                         </div>
                     </div>
                 ) : null}
-                <AutoStopPanel />
 
 
                 {/* label din VM păstrat ca fallback informativ (nu calculăm nimic) */}

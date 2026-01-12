@@ -16,7 +16,6 @@ export function useStopFramePreviewLookup() {
             if (!p) continue;
             // stopFramePreviewUrl poate fi undefined (încă se încarcă) sau null (invalid)
             // DOAR dacă preview-ul a fost deja rezolvat
-            console.log("[stopFrame]", f);
             if (f.stopFramePreviewUrl !== undefined) {
                 m.set(p, f.stopFramePreviewUrl); // string | null
             }

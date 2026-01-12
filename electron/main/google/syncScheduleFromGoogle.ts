@@ -1,10 +1,12 @@
 import { google } from "googleapis";
 import fs from "fs";
 import path from "path";
-import { app } from "electron";
 import { loadConfig } from "../config/config";
-import { logInfo, logError } from "../config/logger";
+import { saveSchedule } from "../schedule/store";
 import { getTodaySheetName } from "./utils";
+import {logError, logInfo} from "../config/logger.ts";
+import {ScheduleItem} from "../../types/types.ts";
+
 
 export async function syncScheduleFromGoogle() {
   const cfg = loadConfig();
@@ -51,8 +53,14 @@ export async function syncScheduleFromGoogle() {
     // Convert Google rows to obSister schedule
     const schedule = rows.filter(r => r[0] && r[1] && r[2] && r[5]).map((r, i) => {
       const [title, start, duration, fb, yt, fbKey] = r;
-      const platforms =
-        fb?.toLowerCase() === "true" && yt.toLowerCase() === "true" ? "multi" : "facebook";
+
+      // Safely check for "true" strings
+      const isFb = String(fb || "").toLowerCase() === "true";
+      const isYt = String(yt || "").toLowerCase() === "true";
+
+      let platform: "facebook" | "youtube" | "multi" = "facebook";
+      if (isFb && isYt) platform = "multi";
+      else if (isYt) platform = "youtube";
 
       const [h, m] = (start || "00:00").split(":").map(Number);
       const today = new Date();
@@ -65,20 +73,20 @@ export async function syncScheduleFromGoogle() {
       // ✅ Build local datetime string, no UTC shift, no "Z"
       const localDateTime = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 
-      return {
+      const item: ScheduleItem = {
         id: `${title}-${i}`,
         name: title || "Untitled",
         startTime: localDateTime,            // ✅ clean local format
         durationMinutes: parseInt(duration || "0", 10),
-        platform: platforms,
+        platform: platform,
         fbKey: fbKey || "",
         status: "upcoming",
       };
+      return item;
     });
 
     // Save schedule file locally
-    const savePath = path.join(app.getPath("userData"), "schedule.json");
-    fs.writeFileSync(savePath, JSON.stringify(schedule, null, 2));
+    saveSchedule(schedule);
 
     logInfo(`✅ Synced ${schedule.length} programs from "${todaySheet}".`);
     return {

@@ -12,6 +12,15 @@ const defaultConfig: OBSConfig = {
         defaultSheet: "Luni",
         autoSync: false,
     },
+    autoStop: {
+        enabled: false,
+        fps: 3,
+        threshold: 1.5,
+        requiredHits: 3,
+        windowSec: 3,
+        cooldownSec: 10,
+        endingLeadMin: 2,
+    }
 };
 
 export type SettingsPageViewModel = {
@@ -34,6 +43,7 @@ export type SettingsPageViewModel = {
 
     update: (key: keyof OBSConfig, value: any) => void;
     updateGoogle: (key: keyof OBSConfig["google"], value: any) => void;
+    updateAutoStop: (key: keyof OBSConfig["autoStop"], value: any) => void;
 
     save: () => Promise<void>;
 };
@@ -67,12 +77,17 @@ export function useSettingsPageViewModel(): SettingsPageViewModel {
 
     const update = useCallback((key: keyof OBSConfig, value: any) => {
         setConfig((prev) => (prev ? { ...prev, [key]: value } : defaultConfig));
-        // behavior unchanged: saved flag not auto-reset in original code; keep same
     }, []);
 
     const updateGoogle = useCallback((key: keyof OBSConfig["google"], value: any) => {
         setConfig((prev) =>
             prev ? { ...prev, google: { ...prev.google, [key]: value } } : defaultConfig
+        );
+    }, []);
+
+    const updateAutoStop = useCallback((key: keyof OBSConfig["autoStop"], value: any) => {
+        setConfig((prev) =>
+            prev ? { ...prev, autoStop: { ...prev.autoStop, [key]: value } } : defaultConfig
         );
     }, []);
 
@@ -129,6 +144,7 @@ export function useSettingsPageViewModel(): SettingsPageViewModel {
         syncSchedule,
         update,
         updateGoogle,
+        updateAutoStop,
         save,
     };
 }

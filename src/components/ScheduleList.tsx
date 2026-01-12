@@ -119,17 +119,6 @@ export default function ScheduleList() {
 
                 // NOU: item activ scanat (din VM) -> doar highlight/badge
                 const isAutoStopActiveItem: boolean = Boolean(row.isAutoStopActiveItem ?? i.isAutoStopActiveItem);
-
-                // Badge mic lângă itemul activ + tooltip cu mesajul complet (din props globale)
-                const activeBadge =
-                    isAutoStopActiveItem && autoStopScanStatusLabel && autoStopScanVariant ? (
-                        <MiniBadge
-                            label={autoStopScanStatusLabel}
-                            variant={autoStopScanVariant}
-                            title={autoStopScanStatusLabel}
-                        />
-                    ) : null;
-
                 return (
                     <tr
                         key={row.id}
@@ -161,9 +150,6 @@ export default function ScheduleList() {
                                 onChange={(e) => row.onChangeName?.(e.target.value)}
                             />
                           </div>
-
-                          {/* NOU: badge mic pentru item activ scanat */}
-                          {activeBadge}
                         </div>
                       </td>
 

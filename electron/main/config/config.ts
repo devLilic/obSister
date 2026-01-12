@@ -25,6 +25,15 @@ export function loadConfig(): OBSConfig {
       defaultSheet: "Luni",
       autoSync: false,
     },
+    autoStop: {
+      enabled: false,
+      fps: 3,
+      threshold: 0.2,
+      requiredHits: 3,
+      windowSec: 3,
+      cooldownSec: 10,
+      endingLeadMin: 5,
+    }
   };
 
   try {

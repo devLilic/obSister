@@ -2,7 +2,8 @@
 import { FFmpegScanner } from "./ffmpegScanner";
 import { dHashFromGray9x8, hammingDistance64, logMatchDebug } from "./analyzer";
 import { DecisionEngine } from "./decisionEngine";
-import { logInfo, logWarn, logError } from "../../config/logger";
+import { logInfo, logWarn, logError, logAction } from "../../config/logger";
+import { loadConfig } from "../../config/config";
 import type { AutoStopConfig } from "../../../types/types";
 
 /**
@@ -21,15 +22,12 @@ class AutoStopService {
 
     private onTriggered: (() => void) | null = null;
 
-    private config: AutoStopConfig = {
-        enabled: false,
-        fps: 3,
-        threshold: 0.2,
-        requiredHits: 3,
-        windowSec: 3,
-        cooldownSec: 10,
-        endingLeadMin: 1,
-    };
+    private config: AutoStopConfig;
+
+    constructor() {
+        const globalConfig = loadConfig();
+        this.config = globalConfig.autoStop;
+    }
 
     private async computeReferenceHashFromImage(imagePath: string): Promise<bigint> {
         const { spawn } = await import("child_process");
@@ -72,6 +70,7 @@ class AutoStopService {
 
     setConfig(partial: Partial<AutoStopConfig>) {
         this.config = { ...this.config, ...partial };
+        logAction("autostop_service_config_updated", { partial });
     }
 
     isEnabled() {
@@ -140,7 +139,7 @@ class AutoStopService {
 
         this.scanner.start();
         this.running = true;
-        logInfo(`🧠 AutoStop scan started (maxDistance=${maxDistance}, fps=${this.config.fps})`);
+        logAction("autostop_service_scan_started", { maxDistance, fps: this.config.fps });
     }
 
     stop() {
@@ -149,7 +148,7 @@ class AutoStopService {
         this.engine = null;
         this.onTriggered = null;
         this.running = false;
-        logInfo("🛑 AutoStop scan stopped");
+        logAction("autostop_service_scan_stopped");
     }
 
     isRunning() {
@@ -168,7 +167,9 @@ class AutoStopService {
         }
 
         const distance = hammingDistance64(this.refHash, cur);
-        logMatchDebug(index, distance, maxDistance);
+        if (distance <= maxDistance){
+            logMatchDebug(index, distance, maxDistance);
+        }
 
         if (this.engine.register(distance)) {
             // single decision: trigger callback; no stream control here
@@ -188,6 +189,7 @@ class AutoStopService {
         return {
             running: this.running,
             enabled: this.config.enabled,
+            stopFramePath: this.config.referenceImagePath,
         };
     }
 }

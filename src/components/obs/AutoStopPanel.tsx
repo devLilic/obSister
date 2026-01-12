@@ -1,5 +1,6 @@
 // filepath: src/components/obs/AutoStopPanel.tsx
 import { useAutoStopPanelViewModel } from "../../hooks/useAutoStopPanelViewModel";
+import { useEffect, useState } from "react";
 
 type Variant = "info" | "success" | "warning" | "error";
 
@@ -31,18 +32,33 @@ function dotClasses(variant: Variant) {
 
 export default function AutoStopPanel() {
     const vm = useAutoStopPanelViewModel();
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
 
     const variant = vm.variant as Variant;
 
+    useEffect(() => {
+        if (vm.stopFramePath) {
+            window.api.stopFrames.openPreview(vm.stopFramePath).then((url) => {
+                setImageUrl(url);
+            });
+        } else {
+            setImageUrl(null);
+        }
+    }, [vm.stopFramePath]);
+
     return (
-        <div className="bg-gray-800 rounded p-4 border border-gray-700 mt-4 text-gray-100 w-full max-w-2xl">
+
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 flex flex-col w-1/2 text-gray-100 ">
             <div className="flex items-center justify-between gap-3">
                 <h3 className="text-base font-semibold">🧠 AutoStop</h3>
 
                 {/* Global ON/OFF (din VM) */}
                 <div className="flex items-center gap-2 text-sm">
-                    <span className={`inline-block w-2.5 h-2.5 rounded-full ${vm.isScanning ? "bg-green-500" : "bg-gray-500"}`} />
-                    <span className="font-medium">{vm.isScanning ? "ON" : "OFF"}</span>
+                    {vm.isScanning && (
+                        <span className="text-xs text-green-400 animate-pulse mr-1">Scanning</span>
+                    )}
+                    <span className={`inline-block w-2.5 h-2.5 rounded-full ${vm.isEnabled ? "bg-green-500" : "bg-gray-500"}`} />
+                    <span className="font-medium">{vm.isEnabled ? "ON" : "OFF"}</span>
                 </div>
             </div>
 
@@ -53,13 +69,24 @@ export default function AutoStopPanel() {
                     <div className="flex-1">
                         <div className="font-medium">{vm.label}</div>
 
-                        {/* Eligibilitate per item (text gata de afișat din VM) */}
-                        <div className="mt-1 opacity-90">{vm.eligibilityText}</div>
+                        {/* StopFrame Image Preview */}
+                        <div className="my-2">
+                            <div className="relative rounded overflow-hidden border border-gray-600 bg-black/40 inline-block min-w-[200px] min-h-[112px]">
+                                {imageUrl ? (
+                                    <img 
+                                        src={imageUrl} 
+                                        alt="StopFrame" 
+                                        className="max-h-32 object-contain"
+                                    />
+                                ) : (
+                                    <div className="w-[200px] h-[112px] bg-black" />
+                                )}
+                            </div>
+                        </div>
 
-                        {/* Opțional: pt timeline/debug UI ulterior, dar fără logică */}
-                        {vm.lastEventType ? (
-                            <div className="mt-1 text-xs opacity-70">Last event: {vm.lastEventType}</div>
-                        ) : null}
+                        {/* Eligibilitate per item (text gata de afișat din VM) */}
+                        <div className="opacity-90">{vm.eligibilityText}</div>
+
                     </div>
                 </div>
             </div>

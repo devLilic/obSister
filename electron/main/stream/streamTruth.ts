@@ -3,6 +3,7 @@ import { StreamEndReason, StreamState, StreamContext, ScheduleItem } from "../..
 import { logAction } from "../config/logger";
 import { getMainWindow } from "../obs/connection";
 import { loadSchedule } from "../schedule/store";
+import { onStreamContextChanged } from "../features/autoStop/autoStopOrchestrator";
 
 let streamState: StreamState = "idle";
 let streamEndReason: StreamEndReason | null = null;
@@ -52,6 +53,9 @@ function emitContextIfChanged() {
 
     const win = getMainWindow();
     win?.webContents?.send("stream-context", ctx);
+
+    // Notify AutoStop orchestrator of the state change
+    void onStreamContextChanged(ctx);
 }
 
 export function getStreamState(): StreamState {

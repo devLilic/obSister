@@ -10,6 +10,7 @@ export interface OBSConfig {
     defaultSheet: string;
     autoSync: boolean;
   };
+  autoStop: AutoStopConfig;
 }
 
 /* ===============================
@@ -66,14 +67,15 @@ export type StopFrameNotification =
    =============================== */
 
 export type AutoStopRuntimeEvent =
-    | { type: "scan_started"; itemId: string }
+    | { type: "scan_started"; itemId: string; stopFramePath?: string }
     | {
   type: "scan_stopped";
   itemId: string;
   reason: "manual" | "duration" | "obs_crash" | "stopframe_detected";
 }
     | { type: "stopframe_detected"; itemId: string }
-    | { type: "stream_stop_sent"; itemId: string };
+    | { type: "stream_stop_sent"; itemId: string }
+    | { type: "enabled_changed"; enabled: boolean };
 
 /* ===============================
    APP ACTION TYPES (LOGGING)
@@ -96,11 +98,22 @@ export type AppActionType =
     // AutoStop runtime enforcement actions
     | "autostop_guard_not_started"
     | "autostop_virtualcam_start"
+    | "autostop_virtualcam_start_failed"
+    | "autostop_virtualcam_stop_failed"
     | "autostop_virtualcam_stop"
     | "autostop_scan_started"
     | "autostop_scan_stopped"
+    | "autostop_service_scan_started"
+    | "autostop_service_scan_stopped"
     | "autostop_stopframe_detected"
-    | "autostop_stream_stop_sent";
+    | "autostop_stream_stop_sent"
+    | "autostop_auto_enable"
+    | "autostop_orchestrator_init"
+    | "autostop_orchestrator_reset"
+    | "autostop_service_config_updated"
+    | "autostop_decision_engine_hit"
+    | "stopframe_preview_invalid"
+    ;
 
 /* ===============================
    AUTO-STOP STREAM
@@ -137,6 +150,7 @@ export type AutoStopConfig = {
 export type AutoStopStatus = {
   running: boolean;
   enabled: boolean;
+  stopFramePath?: string;
 };
 
 /* ===============================

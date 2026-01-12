@@ -3,7 +3,7 @@ import fs from "fs";
 import { obs } from "../../obs/connection";
 import { stopStream } from "../../obs/controller";
 import { loadSchedule } from "../../schedule/store";
-import { logAction, logWarn } from "../../config/logger";
+import { logAction, logWarn, logInfo } from "../../config/logger";
 import type {
     StreamContext,
     ScheduleItem,
@@ -21,6 +21,7 @@ let initialized = false;
 let scanningItemId: string | null = null;
 const scanStartedForItem = new Set<string>(); // per runtime (not persisted)
 let virtualCamOn = false;
+let evaluationTimer: NodeJS.Timeout | null = null;
 
 function emitRuntimeEvent(evt: AutoStopRuntimeEvent) {
     const win = getMainWindow();
@@ -91,6 +92,13 @@ async function ensureScanStopped(reason: StopReason) {
 
     scanningItemId = null;
     await stopVirtualCam();
+
+    // Clear evaluation timer on stop if no item is active
+    if (evaluationTimer) {
+        clearInterval(evaluationTimer);
+        evaluationTimer = null;
+        logInfo("🧠 AutoStop Orchestrator: evaluation timer cleared");
+    }
 }
 
 /**
@@ -138,12 +146,17 @@ async function maybeStartScan(ctx: StreamContext) {
     const untilEnd = minutesUntilEnd(item);
 
     if (untilEnd > leadMin) {
-        logAction("autostop_guard_not_started", {
-            reason: "outside_window",
-            itemId: item.id,
-            untilEndMin: Number(untilEnd.toFixed(2)),
-            leadMin,
-        });
+        // Only log once every minute or if it's the first check to avoid spam
+        const shouldLog = !scanningItemId && !scanStartedForItem.has(item.id);
+
+        if (shouldLog) {
+            logAction("autostop_guard_not_started", {
+                reason: "outside_window",
+                itemId: item.id,
+                untilEndMin: Number(untilEnd.toFixed(2)),
+                leadMin,
+            });
+        }
         return;
     }
 
@@ -175,7 +188,7 @@ async function maybeStartScan(ctx: StreamContext) {
     scanningItemId = item.id;
     scanStartedForItem.add(item.id);
 
-    emitRuntimeEvent({ type: "scan_started", itemId: item.id });
+    emitRuntimeEvent({ type: "scan_started", itemId: item.id, stopFramePath: item.stopFramePath });
     logAction("autostop_scan_started", { itemId: item.id, leadMin });
 
     // Start scan; on trigger: stop stream (End Stream)
@@ -202,6 +215,19 @@ async function maybeStartScan(ctx: StreamContext) {
  */
 export async function onStreamContextChanged(ctx: StreamContext) {
     if (!initialized) return;
+
+    logInfo(`🧠 AutoStop Orchestrator: processing stream context change (state=${ctx.streamState})`);
+
+    const svc = getAutoStopService();
+
+    // ✅ Requirement: AutoStop must be globally enabled when a stream is live
+    if (ctx.streamState === "live" && !svc.isEnabled()) {
+        logAction("autostop_auto_enable", { reason: "stream_live" });
+        svc.setConfig({ enabled: true });
+        emitRuntimeEvent({ type: "enabled_changed", enabled: true });
+    }
+
+
 
     // Cleanup conditions (must ALWAYS execute):
     // a) stopframe detection -> handled immediately via ensureScanStopped
@@ -238,15 +264,28 @@ export async function onStreamContextChanged(ctx: StreamContext) {
 
     // Start scan if eligible
     await maybeStartScan(ctx);
+
+    // If stream is live but scan hasn't started yet, ensure evaluation timer is running
+    if (ctx.streamState === "live" && !scanningItemId && !evaluationTimer) {
+        evaluationTimer = setInterval(() => {
+            // We need a fresh context if possible, but at least we re-evaluate with current time
+            void maybeStartScan(ctx);
+        }, 10_000); // Check every 30 seconds
+    }
 }
 
 export function initAutoStopOrchestrator() {
     if (initialized) return;
+    logAction("autostop_orchestrator_init");
     initialized = true;
 }
 
 export function resetAutoStopOrchestratorRuntime() {
-    // optional helper (not required)
+    logAction("autostop_orchestrator_reset");
+    if (evaluationTimer) {
+        clearInterval(evaluationTimer);
+        evaluationTimer = null;
+    }
     scanStartedForItem.clear();
     scanningItemId = null;
     virtualCamOn = false;
