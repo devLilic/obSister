@@ -13,12 +13,12 @@ export async function startStream(streamKey: string) {
     await obs.call("SetStreamServiceSettings", {
       streamServiceType: "rtmp_custom",
       streamServiceSettings: {
-        // service: "Custom Live",
-        // server: "rtmp://localhost/live",
-        // key: streamKey,
-        service: "Facebook Live",
-        server: "rtmps://live-api-s.facebook.com:443/rtmp/",
+        service: "Custom Live",
+        server: "rtmp://localhost/live",
         key: streamKey,
+        // service: "Facebook Live",
+        // server: "rtmps://live-api-s.facebook.com:443/rtmp/",
+        // key: streamKey,
       },
     });
     await obs.call("StartStream");

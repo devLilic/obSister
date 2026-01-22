@@ -1,3 +1,4 @@
+// File: electron\main\obs\connection.ts
 import OBSWebSocket from "obs-websocket-js";
 import { BrowserWindow } from "electron";
 import { logInfo, logWarn, logError } from "../config/logger";

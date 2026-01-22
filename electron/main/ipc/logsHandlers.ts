@@ -1,3 +1,4 @@
+// File: electron\main\ipc\logsHandlers.ts
 import { ipcMain } from "electron";
 import fs from "fs";
 import path from "path";

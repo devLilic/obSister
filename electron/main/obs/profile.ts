@@ -1,3 +1,4 @@
+// File: electron\main\obs\profile.ts
 import { obs } from "./connection";
 import { logInfo, logError } from "../config/logger";
 

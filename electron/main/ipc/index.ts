@@ -1,7 +1,7 @@
 // filepath: electron/main/ipc/index.ts
 import { registerOBSHandlers } from "./obs.ipc";
 import { logInfo } from "../config/logger";
-import { registerAutoStopIpc } from "./autoStop.ipc.ts";
+import { registerAutoStopIpc } from "./autoStop.ipc";
 import { registerStreamContextIpc } from "./streamContext.ipc";
 import { registerStopFramesIpc } from "./stopFrames.ipc";
 import { registerStopFramesPreviewIpc } from "./stopFramesPreview.ipc";
