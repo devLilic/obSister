@@ -1,3 +1,4 @@
+// electron/main/ipc/googleHandlers.ts
 import { ipcMain } from "electron";
 import { testGoogleSheetsConnection } from "../google/testConnection";
 import { syncScheduleFromGoogle } from "../google/syncScheduleFromGoogle";

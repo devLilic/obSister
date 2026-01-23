@@ -1,21 +1,25 @@
 // filepath: electron/main/features/autoStop/autoStopOrchestrator.ts
 import fs from "fs";
-import { obs } from "../../obs/connection";
-import { stopStream } from "../../obs/controller";
+import { startVirtualCamera, stopVirtualCamera} from "../../obs";
+import { stopStream } from "../../obs";
 import { loadSchedule } from "../../schedule/store";
-import { logAction, logWarn, logInfo } from "../../config/logger";
+import { logAction,  logInfo } from "../../config/logger";
 import type {
     StreamContext,
     ScheduleItem,
     AutoStopRuntimeEvent,
     StreamEndReason,
 } from "../../../types/types";
-import { getMainWindow } from "../../obs/connection";
+import { getMainWindow } from "../../obs";
 import { getAutoStopService } from "./autoStopService";
+import {onStreamContext} from "../../stream/streamEvents.ts";
 
 type StopReason = "manual" | "duration" | "obs_crash" | "stopframe_detected";
 
 let initialized = false;
+
+// subscription handle (decoupled from streamTruth)
+let unsubscribeStreamContext: (() => void) | null = null;
 
 // runtime state
 let scanningItemId: string | null = null;
@@ -29,30 +33,15 @@ function emitRuntimeEvent(evt: AutoStopRuntimeEvent) {
 }
 
 async function startVirtualCam(): Promise<boolean> {
-    try {
-        // OBS WS v5 request name:
-        // StartVirtualCam / StopVirtualCam
-        logAction("autostop_virtualcam_start");
-        await obs.call("StartVirtualCam");
-        virtualCamOn = true;
-        return true;
-    } catch (e: any) {
-        logWarn(`⚠️ AutoStop: StartVirtualCam failed: ${e?.message ?? String(e)}`);
-        virtualCamOn = false;
-        return false;
-    }
+    virtualCamOn = await startVirtualCamera();
+    return virtualCamOn;
 }
 
 async function stopVirtualCam(): Promise<void> {
     if (!virtualCamOn) return;
-    try {
-        logAction("autostop_virtualcam_stop");
-        await obs.call("StopVirtualCam");
-    } catch (e: any) {
-        logWarn(`⚠️ AutoStop: StopVirtualCam failed: ${e?.message ?? String(e)}`);
-    } finally {
-        virtualCamOn = false;
-    }
+    await stopVirtualCamera();
+    virtualCamOn = false;
+    return ;
 }
 
 function findActiveItem(id: string | null): ScheduleItem | null {
@@ -270,24 +259,41 @@ export async function onStreamContextChanged(ctx: StreamContext) {
         evaluationTimer = setInterval(() => {
             // We need a fresh context if possible, but at least we re-evaluate with current time
             void maybeStartScan(ctx);
-        }, 10_000); // Check every 30 seconds
+        }, 10_000); // Check every 10 seconds
     }
 }
 
 export function initAutoStopOrchestrator() {
     if (initialized) return;
+
     logAction("autostop_orchestrator_init");
     initialized = true;
+
+    // Subscribe to runtime stream context changes (decoupled from streamTruth)
+    if (!unsubscribeStreamContext) {
+        unsubscribeStreamContext = onStreamContext((ctx) => {
+            void onStreamContextChanged(ctx);
+        });
+    }
 }
 
 export function resetAutoStopOrchestratorRuntime() {
     logAction("autostop_orchestrator_reset");
+
     if (evaluationTimer) {
         clearInterval(evaluationTimer);
         evaluationTimer = null;
     }
+
+    // Unsubscribe from stream context events
+    if (unsubscribeStreamContext) {
+        unsubscribeStreamContext();
+        unsubscribeStreamContext = null;
+    }
+
     scanStartedForItem.clear();
     scanningItemId = null;
     virtualCamOn = false;
     initialized = false;
 }
+

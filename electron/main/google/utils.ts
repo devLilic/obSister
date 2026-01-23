@@ -1,3 +1,4 @@
+// File: electron/main/google/utils.ts
 export function getTodaySheetName(): string {
   // Use Romanian weekday names matching your sheet tabs
   const days = [

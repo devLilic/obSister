@@ -13,6 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-buddy/ide-toolbox": "^2.4.0",
     "bufferutil": "^4.0.9",
     "concurrently": "^9.2.1",
     "dotenv": "^17.2.3",
@@ -23,8 +24,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.9.4",
     "utf-8-validate": "^6.0.5",
-    "uuid": "^13.0.0",
-    "@react-buddy/ide-toolbox": "^2.4.0"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
@@ -34,6 +34,7 @@
     "@typescript-eslint/parser": "^7.1.1",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.21",
+    "baseline-browser-mapping": "^2.9.17",
     "cross-env": "^10.1.0",
     "electron": "^30.0.1",
     "electron-builder": "^24.13.3",

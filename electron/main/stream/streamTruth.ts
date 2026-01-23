@@ -1,9 +1,9 @@
 // filepath: electron/main/stream/streamTruth.ts
 import { StreamEndReason, StreamState, StreamContext, ScheduleItem } from "../../types/types";
 import { logAction } from "../config/logger";
-import { getMainWindow } from "../obs/connection";
+import { getMainWindow } from "../obs";
 import { loadSchedule } from "../schedule/store";
-import { onStreamContextChanged } from "../features/autoStop/autoStopOrchestrator";
+import {emitStreamContext} from "./streamEvents.ts";
 
 let streamState: StreamState = "idle";
 let streamEndReason: StreamEndReason | null = null;
@@ -54,8 +54,8 @@ function emitContextIfChanged() {
     const win = getMainWindow();
     win?.webContents?.send("stream-context", ctx);
 
-    // Notify AutoStop orchestrator of the state change
-    void onStreamContextChanged(ctx);
+    // Decoupled: publish runtime stream context event (no feature imports here)
+    emitStreamContext(ctx);
 }
 
 export function getStreamState(): StreamState {

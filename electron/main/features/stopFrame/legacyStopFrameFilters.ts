@@ -1,8 +1,8 @@
-// filepath: electron/main/stopFrame/stopFrameFilters.ts
+// electron/main/features/stopFrame/legacyStopFrameFilters.ts
 import fs from "fs";
 import path from "path";
 import { app } from "electron";
-import { logAction, logWarn } from "../config/logger";
+import { logAction, logWarn } from "../../config/logger";
 
 const FILE_NAME = "stopframe-filters.json";
 
@@ -37,7 +37,11 @@ export function loadStopFrameFilters(): StopFrameFiltersMap {
             for (const entry of data) {
                 const id = entry?.scheduleItemId ?? entry?.id ?? null;
                 const stopFramePath = entry?.stopFramePath ?? entry?.path ?? null;
-                if (typeof id === "string" && typeof stopFramePath === "string" && stopFramePath.trim()) {
+                if (
+                    typeof id === "string" &&
+                    typeof stopFramePath === "string" &&
+                    stopFramePath.trim()
+                ) {
                     map.set(id, stopFramePath);
                 }
             }
@@ -59,7 +63,10 @@ export function loadStopFrameFilters(): StopFrameFiltersMap {
             return map;
         }
 
-        logAction("stopframe_filters_invalid", { file: FILE_NAME, reason: "unknown_json_shape" });
+        logAction("stopframe_filters_invalid", {
+            file: FILE_NAME,
+            reason: "unknown_json_shape",
+        });
         return new Map();
     } catch (e: any) {
         logWarn(`⚠️ Failed to parse ${FILE_NAME}: ${e?.message ?? String(e)}`);

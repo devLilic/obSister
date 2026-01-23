@@ -1,3 +1,4 @@
+// File: electron\main\google\syncScheduleFromGoogle.ts
 import { google } from "googleapis";
 import fs from "fs";
 import path from "path";

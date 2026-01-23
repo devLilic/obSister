@@ -5,9 +5,19 @@ import { registerAutoStopIpc } from "./autoStop.ipc";
 import { registerStreamContextIpc } from "./streamContext.ipc";
 import { registerStopFramesIpc } from "./stopFrames.ipc";
 import { registerStopFramesPreviewIpc } from "./stopFramesPreview.ipc";
+import {registerScheduleIpc} from "./schedule.ipc.ts";
+import {registerConfigIpc} from "./config.ipc.ts";
+import {registerLogsIpc} from "./logs.ipc.ts";
+import {registerGoogleIpc} from "./google.ipc.ts";
 
 export function registerIpcHandlers() {
   logInfo("🧠 Initializing all IPC handlers...");
+
+  registerScheduleIpc();
+  registerConfigIpc();
+  registerLogsIpc();
+  registerGoogleIpc();
+
   registerOBSHandlers();
   registerAutoStopIpc();
   registerStreamContextIpc();
