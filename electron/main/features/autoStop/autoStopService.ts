@@ -86,6 +86,19 @@ class AutoStopService {
         return Math.floor(v);
     }
 
+    getDelayAfterScanMs(): number {
+        const v = this.config.delayAfterScanMs;
+        if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return 750;
+        return Math.floor(v);
+    }
+
+    getDelayAroundEndStreamMs(): number {
+        const v = this.config.delayAroundEndStreamMs;
+        if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return 1000;
+        return Math.floor(v);
+    }
+
+
     /**
      * Kept for compatibility: can be set from UI.
      * Runtime enforcement will call setReferenceImage(stopFramePath) before scanning.
@@ -143,6 +156,9 @@ class AutoStopService {
     }
 
     stop() {
+        // Phase 5 idempotency: stop scan only if running
+        if (!this.running) return;
+
         this.scanner?.stop();
         this.scanner = null;
         this.engine = null;

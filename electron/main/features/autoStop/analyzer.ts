@@ -1,5 +1,42 @@
 // FILE: electron/main/features/autoStop/analyzer.ts
-import { logInfo } from "../../config/logger";
+/**
+ * Logger seam (Node-safe):
+ * - In Electron runtime, we try to auto-wire to ../../config/logger via dynamic import.
+ * - In Node/CLI (no Electron), this remains no-op by default.
+ * - Optional override via setAutoStopAnalyzerLogger().
+ */
+export type AutoStopAnalyzerLogger = {
+    logInfo?: (message: string) => void;
+};
+
+let analyzerLogger: Required<AutoStopAnalyzerLogger> = {
+    logInfo: () => {},
+};
+
+// Best-effort auto-wire to Electron logger WITHOUT hard dependency.
+// If it fails (e.g., Node CLI without 'electron'), we keep no-op.
+try {
+    const mod: any = await import("../../config/logger");
+    if (typeof mod?.logInfo === "function") {
+        analyzerLogger = { logInfo: mod.logInfo.bind(mod) };
+    }
+} catch {
+    // no-op in CLI / non-Electron contexts
+}
+
+/**
+ * Optional injection (tests / CLI can set this explicitly).
+ * Passing null resets to no-op (and does NOT attempt Electron auto-wire again).
+ */
+export function setAutoStopAnalyzerLogger(next: AutoStopAnalyzerLogger | null) {
+    if (!next) {
+        analyzerLogger = { logInfo: () => {} };
+        return;
+    }
+    analyzerLogger = {
+        logInfo: typeof next.logInfo === "function" ? next.logInfo : () => {},
+    };
+}
 
 /**
  * Compute dHash from a 9x8 grayscale image buffer (72 bytes).
@@ -40,7 +77,8 @@ export function hammingDistance64(a: bigint, b: bigint): number {
 
 /**
  * Utility logger for tuning.
+ * Semantics preserved: same message format; now routed via optional logger.
  */
 export function logMatchDebug(frameIndex: number, distance: number, maxDistance: number) {
-    logInfo(`🧪 Frame #${frameIndex} dHashDistance=${distance} maxAllowed=${maxDistance}`);
+    analyzerLogger.logInfo(`🧪 Frame #${frameIndex} dHashDistance=${distance} maxAllowed=${maxDistance}`);
 }

@@ -1,0 +1,17 @@
+{
+  "name": "autostop-lab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "scan": "tsx src/cli.ts scan",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -34,7 +34,13 @@ export function loadConfig(): OBSConfig {
       windowSec: 3,
       cooldownSec: 10,
       endingLeadMin: 5,
+
+      // Phase 5: controlled shutdown delays + expected disconnect window
+      delayAfterScanMs: 750,
+      delayAroundEndStreamMs: 1000,
+      expectedDisconnectWindowMs: 4000,
     }
+
   };
 
   try {

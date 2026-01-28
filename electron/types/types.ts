@@ -139,6 +139,25 @@ export type AutoStopConfig = {
    */
   referenceImagePath?: string;
 
+  /**
+   * Delay between stopping scan/virtualcam and sending End Stream.
+   * Default: 750ms (safe).
+   */
+  delayAfterScanMs?: number;
+
+  /**
+   * Delay around End Stream (post-send stabilization).
+   * Default: 1000ms (safe).
+   */
+  delayAroundEndStreamMs?: number;
+
+  /**
+   * If WS disconnect happens within this window after we send End Stream,
+   * classify as expected shutdown (NOT obs_crash).
+   * Default: 4000ms.
+   */
+  expectedDisconnectWindowMs?: number;
+
   crop?: {
     x: number;
     y: number;
@@ -146,6 +165,7 @@ export type AutoStopConfig = {
     h: number;
   };
 };
+
 
 export type AutoStopStatus = {
   running: boolean;

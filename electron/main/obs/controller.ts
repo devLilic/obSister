@@ -3,7 +3,7 @@ import { obs } from "./connection";
 import { logInfo, logError } from "../config/logger";
 import { ensureProfile } from "./profile";
 import type { StreamEndReason } from "../../types/types";
-import { markStopInitiated, markEnded } from "../stream/streamTruth";
+import {markStopInitiated, markEnded, markEndStreamSent, isEndStreamSent} from "../stream/streamTruth";
 
 /**
  * Start a normal RTMP stream (usually Facebook)
@@ -33,8 +33,17 @@ export async function startStream(streamKey: string) {
  */
 export async function stopStream(reason: StreamEndReason = "manual") {
   try {
-    // Phase 1/5A: tag stop initiation
+    // Phase 1/5: tag stop initiation (state -> ending)
     markStopInitiated(reason);
+
+    // Phase 5 idempotency: never send End Stream twice
+    if (isEndStreamSent()) {
+      logInfo("⏭️ StopStream skipped (already sent)");
+      return;
+    }
+
+    // Mark sent BEFORE calling OBS (for expected-disconnect window)
+    markEndStreamSent();
 
     await obs.call("StopStream");
 
@@ -46,6 +55,7 @@ export async function stopStream(reason: StreamEndReason = "manual") {
     logError(`Failed to stop stream: ${error.message}`);
   }
 }
+
 
 /**
  * Ensure correct profile before starting (Single vs Multi)
