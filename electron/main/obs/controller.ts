@@ -4,7 +4,16 @@ import { logInfo, logError } from "../config/logger";
 import { ensureProfile } from "./profile";
 import type { StreamEndReason } from "../../types/types";
 import {markStopInitiated, markEnded, markEndStreamSent, isEndStreamSent} from "../stream/streamTruth";
+import { app } from "electron";
 
+
+const DEV_RTMP_SERVER = "rtmp://localhost/live";
+const PROD_RTMP_SERVER = "rtmps://live-api-s.facebook.com:443/rtmp/";
+
+function getRtmpServer(): string {
+    // app.isPackaged === true în build/production
+    return app.isPackaged ? PROD_RTMP_SERVER : DEV_RTMP_SERVER;
+}
 /**
  * Start a normal RTMP stream (usually Facebook)
  */
@@ -14,11 +23,8 @@ export async function startStream(streamKey: string) {
       streamServiceType: "rtmp_custom",
       streamServiceSettings: {
         service: "Custom Live",
-        server: "rtmp://localhost/live",
+        server: getRtmpServer(),
         key: streamKey,
-        // service: "Facebook Live",
-        // server: "rtmps://live-api-s.facebook.com:443/rtmp/",
-        // key: streamKey,
       },
     });
     await obs.call("StartStream");

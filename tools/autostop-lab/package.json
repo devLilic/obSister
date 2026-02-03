@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "scan": "tsx src/cli.ts scan",
+    "validate": "tsx src/cli.ts validate",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/cli.js"
   },

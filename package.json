@@ -2,7 +2,7 @@
   "name": "obsister",
   "productName": "OBSister",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Smart assistant for OBS streaming automation",
   "author": "devLilic13",
   "type": "module",

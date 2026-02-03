@@ -1,5 +1,6 @@
 // FILE: electron/main/features/autoStop/decisionEngine.ts
 import type { AppActionType } from "../../../types/types";
+import { createRequire } from "node:module";
 
 /**
  * Logger seam (Node-safe):
@@ -15,15 +16,25 @@ let logicLogger: Required<AutoStopLogicLogger> = {
     logAction: () => {},
 };
 
-// Best-effort auto-wire to Electron logger WITHOUT hard dependency.
-// If it fails (e.g., Node CLI without 'electron'), we keep no-op.
-try {
-    const mod: any = await import("../../config/logger");
-    if (typeof mod?.logAction === "function") {
-        logicLogger = { logAction: mod.logAction.bind(mod) };
+/// Best-effort auto-wire to Electron logger WITHOUT hard dependency.
+// IMPORTANT: no top-level await (ES2020 safe).
+let didAutoWire = false;
+
+function maybeAutoWire() {
+    if (didAutoWire) return;
+    didAutoWire = true;
+
+    try {
+        const req = createRequire(import.meta.url);
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const mod = req("../../config/logger") as any;
+
+        if (typeof mod?.logAction === "function") {
+            logicLogger = { logAction: mod.logAction.bind(mod) };
+        }
+    } catch {
+        // no-op in CLI / non-Electron contexts
     }
-} catch {
-    // no-op in CLI / non-Electron contexts
 }
 
 /**
@@ -60,6 +71,7 @@ export class DecisionEngine {
             this.hits = this.hits.filter((t) => now - t <= this.windowSec * 1000);
 
             // Semantics preserved: same action type + same payload shape.
+            maybeAutoWire();
             logicLogger.logAction("autostop_decision_engine_hit", {
                 hitsCount: this.hits.length,
                 requiredHits: this.requiredHits,

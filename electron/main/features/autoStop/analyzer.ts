@@ -1,4 +1,6 @@
 // FILE: electron/main/features/autoStop/analyzer.ts
+import { createRequire } from "node:module";
+
 /**
  * Logger seam (Node-safe):
  * - In Electron runtime, we try to auto-wire to ../../config/logger via dynamic import.
@@ -15,13 +17,23 @@ let analyzerLogger: Required<AutoStopAnalyzerLogger> = {
 
 // Best-effort auto-wire to Electron logger WITHOUT hard dependency.
 // If it fails (e.g., Node CLI without 'electron'), we keep no-op.
-try {
-    const mod: any = await import("../../config/logger");
-    if (typeof mod?.logInfo === "function") {
-        analyzerLogger = { logInfo: mod.logInfo.bind(mod) };
+let didAutoWire = false;
+
+function maybeAutoWire() {
+    if (didAutoWire) return;
+    didAutoWire = true;
+
+    try {
+        const req = createRequire(import.meta.url);
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const mod = req("../../config/logger") as any;
+
+        if (typeof mod?.logInfo === "function") {
+            analyzerLogger = { logInfo: mod.logInfo.bind(mod) };
+        }
+    } catch {
+        // no-op in CLI / non-Electron contexts
     }
-} catch {
-    // no-op in CLI / non-Electron contexts
 }
 
 /**
@@ -80,5 +92,6 @@ export function hammingDistance64(a: bigint, b: bigint): number {
  * Semantics preserved: same message format; now routed via optional logger.
  */
 export function logMatchDebug(frameIndex: number, distance: number, maxDistance: number) {
+    maybeAutoWire();
     analyzerLogger.logInfo(`🧪 Frame #${frameIndex} dHashDistance=${distance} maxAllowed=${maxDistance}`);
 }
